@@ -1,0 +1,38 @@
+appId: com.tuitube.app
+productName: tui-tube
+directories:
+  output: release
+  buildResources: resources
+files:
+  - dist
+  - dist-electron
+  - package.json
+extraResources:
+  - from: bin/yt-dlp
+    to: yt-dlp
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+  icon: resources/icon.ico
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+  icon: resources
+  category: Utility
+  maintainer: tui-tube
+asar: true
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: resources/icon.ico
+  uninstallerIcon: resources/icon.ico
+  installerHeaderIcon: resources/icon.ico
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
