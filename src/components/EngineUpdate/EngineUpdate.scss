@@ -1,0 +1,49 @@
+@use '../../styles/variables' as *;
+
+.engine-update {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: $bg-secondary;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  font-size: 11px;
+  color: $text-muted;
+
+  .engine-status {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &.success {
+      color: $text-primary;
+    }
+
+    &.error {
+      color: $error;
+    }
+  }
+
+  button {
+    min-height: 36px;
+    padding: 8px 14px;
+    background: $bg-tertiary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    color: $text-primary;
+    font-family: $font-family;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}

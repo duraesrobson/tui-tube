@@ -1,0 +1,17 @@
+@use '../../styles/variables' as *;
+
+.loading-indicator {
+  padding: 15px;
+  text-align: center;
+  color: $text-primary;
+  font-size: $font-size-base;
+
+  .dots {
+    animation: blink 1s infinite;
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

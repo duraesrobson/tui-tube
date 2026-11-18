@@ -1,0 +1,142 @@
+@use '../../styles/variables' as *;
+
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+
+  .option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+      font-size: 12px;
+      color: $text-muted;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    select {
+      padding: 10px 15px;
+      background: $bg-secondary;
+      border: 1px solid $border-color;
+      border-radius: $border-radius;
+      color: $text-primary;
+      font-family: $font-family;
+      font-size: $font-size-base;
+      outline: none;
+      cursor: pointer;
+      transition: $transition;
+
+      &:focus {
+        border-color: $text-primary;
+      }
+
+      option {
+        background: $bg-secondary;
+        color: $text-primary;
+      }
+    }
+
+    &.full-width {
+      grid-column: 1 / -1;
+    }
+  }
+}
+
+.format-selector {
+  display: flex;
+  gap: 10px;
+
+  .format-btn {
+    flex: 1;
+    padding: 12px 20px;
+    background: $bg-secondary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    color: $text-muted;
+    font-family: $font-family;
+    font-size: $font-size-base;
+    cursor: pointer;
+    transition: $transition;
+    text-align: center;
+
+    &.active {
+      background: rgba(0, 255, 65, 0.1);
+      border-color: $text-primary;
+      color: $text-primary;
+    }
+
+    &:hover:not(.active) {
+      border-color: $text-muted;
+    }
+  }
+}
+
+.folder-select {
+  display: flex;
+  gap: 10px;
+
+  input {
+    flex: 1;
+    padding: 10px 15px;
+    background: $bg-secondary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    color: $text-primary;
+    font-family: $font-family;
+    font-size: $font-size-base;
+    outline: none;
+
+    &:focus {
+      border-color: $text-primary;
+    }
+  }
+
+  button {
+    padding: 10px 15px;
+    background: $bg-tertiary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    color: $text-primary;
+    font-family: $font-family;
+    font-size: $font-size-base;
+    cursor: pointer;
+    transition: $transition;
+
+    &:hover {
+      border-color: $text-primary;
+    }
+  }
+}
+@media (max-width: 480px) {
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .format-selector .format-btn {
+    min-height: 46px;
+    padding: 12px;
+  }
+
+  .folder-select {
+    flex-wrap: wrap;
+    gap: 8px;
+
+    input {
+      flex: 1 1 100%;
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+
+    button {
+      flex: 1;
+      min-height: 44px;
+      padding: 10px;
+    }
+  }
+}
