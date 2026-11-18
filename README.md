@@ -8,6 +8,9 @@
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![yt-dlp](https://img.shields.io/badge/engine-yt--dlp-FF6B6B?style=flat-square)
+![wrappers](https://img.shields.io/badge/wrappers%20de%20yt--dlp-1.000.001-ff6b6b?style=flat-square)
+
+> **Aviso de utilidade pública:** este é o wrapper de `yt-dlp` nº **1.000.001**. Os outros 1 milhão continuam funcionando — esse só tem interface de terminal e roda no celular.
 
 ---
 
