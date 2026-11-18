@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta do terminal, também usada como cor de fundo das barras do sistema. -->
+    <color name="colorPrimary">#0d0d0d</color>
+    <color name="colorPrimaryDark">#000000</color>
+    <color name="colorAccent">#00ff41</color>
+</resources>
