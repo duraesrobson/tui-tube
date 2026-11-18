@@ -10,7 +10,7 @@
 ![yt-dlp](https://img.shields.io/badge/engine-yt--dlp-FF6B6B?style=flat-square)
 ![wrappers](https://img.shields.io/badge/wrappers%20de%20yt--dlp-1.000.001-ff6b6b?style=flat-square)
 
-> **Aviso de utilidade pública:** este é o wrapper de `yt-dlp` nº **1.000.001**. Os outros 1 milhão continuam funcionando — esse só tem interface de terminal e roda no celular.
+> **Aviso de utilidade pública:** este é o wrapper de `yt-dlp` nº **1.000.001**. Os outros 1 milhão continuam funcionando, beleza? Esse só tem interface de terminal e roda no celular.
 
 ---
 
