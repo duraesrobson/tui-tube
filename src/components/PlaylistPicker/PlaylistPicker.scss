@@ -1,0 +1,142 @@
+@use '../../styles/variables' as *;
+
+.playlist-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: $bg-secondary;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+
+  .picker-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .picker-title {
+    font-size: 12px;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .picker-hint {
+    font-size: 11px;
+    color: $text-muted;
+  }
+
+  .picker-loading,
+  .picker-empty,
+  .picker-error {
+    font-size: 12px;
+    color: $text-muted;
+    padding: 6px 0;
+  }
+
+  .picker-error {
+    color: $error;
+  }
+
+  .picker-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .picker-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border: 1px solid transparent;
+    border-radius: $border-radius;
+    cursor: pointer;
+    transition: $transition;
+
+    &:hover {
+      border-color: $border-color;
+    }
+
+    &.checked {
+      border-color: $text-primary;
+      background: rgba(0, 255, 65, 0.06);
+    }
+
+    input[type='checkbox'] {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      accent-color: $text-primary;
+      cursor: pointer;
+    }
+  }
+
+  .picker-thumb {
+    width: 64px;
+    height: 36px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 2px;
+    background: $bg-tertiary;
+
+    &.placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $text-muted;
+      font-size: 16px;
+    }
+  }
+
+  .picker-item-title {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .picker-more {
+    align-self: flex-start;
+    min-height: 36px;
+    padding: 8px 14px;
+    background: $bg-tertiary;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    color: $text-primary;
+    font-family: $font-family;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .playlist-picker {
+    padding: 10px;
+
+    .picker-thumb {
+      width: 56px;
+      height: 32px;
+    }
+
+    .picker-item {
+      min-height: 48px;
+    }
+  }
+}

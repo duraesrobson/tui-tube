@@ -11,10 +11,12 @@ import {
   DownloadsList,
   ErrorMessage,
   LoadingIndicator,
-  EngineUpdate
+  EngineUpdate,
+  PlaylistPicker
 } from './components'
 import { useVideo } from './hooks/useVideo'
 import { useDownloads } from './hooks/useDownloads'
+import { usePlaylist } from './hooks/usePlaylist'
 import { platform } from './lib/platform'
 import { normalizeLink, parseLink } from './lib/youtubeUrl'
 import type { QualityMap } from './types'
@@ -43,9 +45,17 @@ function App() {
   const [quality, setQuality] = useState('0')
   const [outputFolder, setOutputFolder] = useState('')
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
-  const [playlistItems, setPlaylistItems] = useState('')
+  const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
+
+  const link = useMemo(() => parseLink(url), [url])
+  const playlistUrl = link && (link.kind === 'playlist' || link.playlistId) ? link.url : null
+  const playlist = usePlaylist(playlistUrl, downloadPlaylist)
+
+  useEffect(() => {
+    setSelectedItems(new Set())
+  }, [playlistUrl])
 
   const qualities = useMemo<QualityMap>(() => {
     const formats = videoInfo?.formats ?? []
@@ -149,17 +159,33 @@ function App() {
     }
   }
 
+  const canDownload = Boolean(url.trim()) &&
+    (Boolean(videoInfo) || (downloadPlaylist && playlist.items.length > 0))
+
+  const selectedParam = useMemo(
+    () => [...selectedItems].sort((a, b) => a - b).join(','),
+    [selectedItems]
+  )
+
+  const toggleItem = (index: number) => {
+    setSelectedItems((prev) => {
+      const next = new Set(prev)
+      next.has(index) ? next.delete(index) : next.add(index)
+      return next
+    })
+  }
+
   const handleStartDownload = () => {
-    if (!url.trim() || !videoInfo) return
+    if (!canDownload) return
 
     void startDownload({
       url: normalizeLink(url) ?? url,
-      title: videoInfo.title || 'Video',
+      title: videoInfo?.title || (downloadPlaylist ? 'Playlist' : 'Video'),
       format,
       quality,
       outputFolder,
       playlist: downloadPlaylist,
-      playlistItems: playlistItems.trim()
+      playlistItems: downloadPlaylist ? selectedParam : undefined
     })
   }
 
@@ -184,9 +210,20 @@ function App() {
           <VideoInfo
             videoInfo={videoInfo}
             downloadPlaylist={downloadPlaylist}
-            playlistItems={playlistItems}
             onDownloadPlaylistChange={setDownloadPlaylist}
-            onPlaylistItemsChange={setPlaylistItems}
+          />
+        )}
+
+        {downloadPlaylist && playlistUrl && (
+          <PlaylistPicker
+            items={playlist.items}
+            selected={selectedItems}
+            hasMore={playlist.hasMore}
+            isLoading={playlist.isLoading}
+            isLoadingMore={playlist.isLoadingMore}
+            error={playlist.error}
+            onToggle={toggleItem}
+            onLoadMore={playlist.loadMore}
           />
         )}
 
@@ -207,7 +244,7 @@ function App() {
         <DownloadButton
           format={format}
           isLoading={false}
-          disabled={!url.trim() || !videoInfo || atCapacity}
+          disabled={!canDownload || atCapacity}
           onClick={handleStartDownload}
         />
       </section>

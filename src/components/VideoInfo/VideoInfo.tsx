@@ -4,24 +4,32 @@ import './VideoInfo.scss'
 interface VideoInfoProps {
   videoInfo: VideoInfoType
   downloadPlaylist: boolean
-  playlistItems: string
   onDownloadPlaylistChange: (checked: boolean) => void
-  onPlaylistItemsChange: (value: string) => void
 }
 
 export const VideoInfo = ({
   videoInfo,
   downloadPlaylist,
-  playlistItems,
-  onDownloadPlaylistChange,
-  onPlaylistItemsChange
+  onDownloadPlaylistChange
 }: VideoInfoProps) => {
   return (
     <>
       <div className="video-info">
-        <span className="uploader">{videoInfo.uploader}</span>
-        <span className="title">{videoInfo.title}</span>
+        {videoInfo.thumbnail && (
+          <img
+            className="video-thumb"
+            src={videoInfo.thumbnail}
+            alt=""
+            loading="lazy"
+            referrerPolicy="no-referrer"
+          />
+        )}
+        <div className="video-meta">
+          <span className="uploader">{videoInfo.uploader}</span>
+          <span className="title">{videoInfo.title}</span>
+        </div>
       </div>
+
       <label className="playlist-toggle">
         <input
           type="checkbox"
@@ -30,17 +38,6 @@ export const VideoInfo = ({
         />
         <span>Baixar playlist completa</span>
       </label>
-
-      {downloadPlaylist && (
-        <input
-          className="playlist-range"
-          type="text"
-          inputMode="numeric"
-          placeholder="Itens (ex: 1-5, 8) — vazio baixa todos"
-          value={playlistItems}
-          onChange={(e) => onPlaylistItemsChange(e.target.value.replace(/[^0-9,\-:\s]/g, ''))}
-        />
-      )}
     </>
   )
 }
