@@ -119,6 +119,7 @@ object DownloadEngine {
         format: String,
         quality: String,
         playlist: Boolean,
+        playlistItems: String?,
         emit: (DownloadEvent) -> Unit
     ) {
         val appContext = context.applicationContext
@@ -133,7 +134,7 @@ object DownloadEngine {
 
                 workDir.mkdirs()
 
-                val request = buildRequest(url, format, quality, playlist, workDir)
+                val request = buildRequest(url, format, quality, playlist, playlistItems, workDir)
                 val processId = UUID.randomUUID().toString()
                 processIds[id] = processId
                 val lastPhase = AtomicReference<String?>(null)
@@ -287,6 +288,7 @@ object DownloadEngine {
         format: String,
         quality: String,
         playlist: Boolean,
+        playlistItems: String?,
         workDir: File
     ): YoutubeDLRequest {
         val template = if (playlist) {
@@ -303,6 +305,10 @@ object DownloadEngine {
             .addOption("--retries", 3)
             .addOption("--fragment-retries", 3)
             .addOption(if (playlist) "--yes-playlist" else "--no-playlist")
+
+        if (playlist && !playlistItems.isNullOrBlank()) {
+            request.addOption("--playlist-items", playlistItems.trim())
+        }
 
         if (format == "mp3") {
             request

@@ -43,6 +43,7 @@ function App() {
   const [quality, setQuality] = useState('0')
   const [outputFolder, setOutputFolder] = useState('')
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
+  const [playlistItems, setPlaylistItems] = useState('')
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
 
@@ -157,7 +158,8 @@ function App() {
       format,
       quality,
       outputFolder,
-      playlist: downloadPlaylist
+      playlist: downloadPlaylist,
+      playlistItems: playlistItems.trim()
     })
   }
 
@@ -182,7 +184,9 @@ function App() {
           <VideoInfo
             videoInfo={videoInfo}
             downloadPlaylist={downloadPlaylist}
+            playlistItems={playlistItems}
             onDownloadPlaylistChange={setDownloadPlaylist}
+            onPlaylistItemsChange={setPlaylistItems}
           />
         )}
 

@@ -20,6 +20,7 @@ export interface DownloadRequest {
   quality: string
   outputFolder: string
   playlist: boolean
+  playlistItems?: string
 }
 
 export interface DownloadItem {

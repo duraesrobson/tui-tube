@@ -7,6 +7,7 @@ import type { DownloadItem, DownloadOptions, DownloadRequest } from '../types'
 
 export interface StartDownloadInput extends DownloadRequest {
   title: string
+  playlistItems?: string
 }
 
 interface UseDownloadsReturn {
@@ -68,7 +69,8 @@ export const useDownloads = (): UseDownloadsReturn => {
         id,
         format: input.format,
         quality: input.quality,
-        outputFolder: input.outputFolder
+        outputFolder: input.outputFolder,
+        playlistItems: input.playlistItems
       }
 
       try {
@@ -100,7 +102,8 @@ export const useDownloads = (): UseDownloadsReturn => {
         format: input.format,
         quality: input.quality,
         outputFolder: input.outputFolder,
-        playlist: input.playlist
+        playlist: input.playlist,
+        playlistItems: input.playlistItems
       }
 
       setDownloads((prev) => [

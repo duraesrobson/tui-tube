@@ -244,6 +244,10 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
 
     args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
+    if (playlistItems?.trim()) {
+      args.push('--playlist-items', playlistItems.trim())
+    }
+
     const ytdlp = createYtDlpSpawn(args, targetFolder)
     jobs.set(id, ytdlp)
 
@@ -293,9 +297,10 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
   format: 'mp3' | 'mp4'
   quality: string
   outputFolder: string
+  playlistItems?: string
 }) => {
   return new Promise((resolve) => {
-    const { id, format, quality, outputFolder } = options
+    const { id, format, quality, outputFolder, playlistItems } = options
 
     const targetFolder = join(outputFolder, format === 'mp3' ? 'Audio' : 'Video')
     if (!existsSync(targetFolder)) mkdirSync(targetFolder, { recursive: true })
@@ -314,6 +319,10 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
     }
 
     args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
+
+    if (playlistItems?.trim()) {
+      args.push('--playlist-items', playlistItems.trim())
+    }
 
     const ytdlp = createYtDlpSpawn(args, targetFolder)
     jobs.set(id, ytdlp)

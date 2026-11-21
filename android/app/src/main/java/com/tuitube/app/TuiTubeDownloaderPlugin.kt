@@ -121,6 +121,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
         val format = call.getString("format") ?: "mp3"
         val quality = call.getString("quality") ?: "0"
         val playlist = call.getBoolean("playlist") ?: false
+        val playlistItems = call.getString("playlistItems")
         val appContext = context.applicationContext
 
         DownloadEngine.startDownload(
@@ -129,7 +130,8 @@ class TuiTubeDownloaderPlugin : Plugin() {
             url = url,
             format = format,
             quality = quality,
-            playlist = playlist
+            playlist = playlist,
+            playlistItems = playlistItems
         ) { event ->
             notifyProgress(event)
         }

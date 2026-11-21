@@ -7,6 +7,8 @@ export interface DownloadOptions {
   format: DownloadFormat
   quality: string
   outputFolder: string
+  /** Intervalo de itens da playlist (ex.: "1-5,8"); vazio = todos. */
+  playlistItems?: string
 }
 
 export interface VideoFormat {

@@ -48,7 +48,33 @@
     border-color: $text-primary;
   }
 }
+.playlist-range {
+  width: 100%;
+  padding: 10px 12px;
+  background: $bg-secondary;
+  border: 1px solid $border-color;
+  border-radius: $border-radius;
+  color: $text-primary;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  outline: none;
+  transition: $transition;
+
+  &::placeholder {
+    color: $text-muted;
+  }
+
+  &:focus {
+    border-color: $text-primary;
+  }
+}
+
 @media (max-width: 600px) {
+  .playlist-range {
+    // 16px evita o zoom automático do WebView.
+    font-size: 16px;
+  }
+
   .video-info {
     padding: 12px;
     gap: 6px;

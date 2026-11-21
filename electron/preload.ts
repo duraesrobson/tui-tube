@@ -5,6 +5,7 @@ export interface DownloadOptions {
   format: 'mp3' | 'mp4'
   quality: string
   outputFolder: string
+  playlistItems?: string
 }
 
 export interface VideoInfo {
