@@ -27,6 +27,8 @@ export interface DownloadResult {
   url: string
   id?: string
   error?: string
+  /** true quando o job foi interrompido pelo usuário. */
+  cancelled?: boolean
   /**
    * true quando o download foi apenas iniciado (Android: serviço em background).
    * A conclusão chega depois pelo evento de progresso.
@@ -43,7 +45,7 @@ export interface DownloadProgressEvent {
   progress?: number
   isPlaylist?: boolean
   /** Estado final reportado pelo backend Android. */
-  status?: 'downloading' | 'converting' | 'completed' | 'error'
+  status?: 'downloading' | 'converting' | 'completed' | 'cancelled' | 'error'
   error?: string
 }
 
@@ -66,6 +68,7 @@ export interface PlatformAPI {
   getVideoInfo(url: string): Promise<VideoInfoResult>
   downloadVideo(url: string, options: DownloadOptions): Promise<DownloadResult>
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
+  cancelDownload(id: string): Promise<void>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void
   updateEngine?(): Promise<EngineUpdateResult>
@@ -84,6 +87,7 @@ export interface ElectronBridge {
   getDefaultDownloadPath(): Promise<string>
   downloadVideo(url: string, options: DownloadOptions): Promise<DownloadResult>
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
+  cancelDownload(id: string): Promise<void>
   getVideoInfo(url: string): Promise<VideoInfoResult>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void

@@ -94,6 +94,20 @@ function App() {
     return unsubscribe
   }, [])
 
+  const handleCancelDownload = async (id: string) => {
+    setDownloads((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, status: 'cancelled', error: undefined } : item
+      )
+    )
+
+    try {
+      await platform.cancelDownload(id)
+    } catch {
+      // O item já foi marcado; se algo falhar, a UI segue consistente.
+    }
+  }
+
   const handleSelectFolder = async () => {
     if (!platform.canSelectFolder) return
 
@@ -148,7 +162,11 @@ function App() {
           item.id === id
             ? {
                 ...item,
-                status: result.success ? 'completed' : 'error',
+                status: result.cancelled
+                  ? 'cancelled'
+                  : result.success
+                    ? 'completed'
+                    : 'error',
                 progress: result.success ? 100 : item.progress,
                 error: result.error
               }
@@ -220,7 +238,7 @@ function App() {
         <DownloadProgress download={currentDownload} />
       )}
 
-      <DownloadsList downloads={downloads} />
+      <DownloadsList downloads={downloads} onCancel={handleCancelDownload} />
 
       {platform.supportsEngineUpdate && <EngineUpdate />}
     </div>

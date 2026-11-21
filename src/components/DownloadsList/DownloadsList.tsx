@@ -3,9 +3,13 @@ import './DownloadsList.scss'
 
 interface DownloadsListProps {
   downloads: DownloadItem[]
+  onCancel: (id: string) => void
 }
 
-export const DownloadsList = ({ downloads }: DownloadsListProps) => {
+const isActive = (status: DownloadItem['status']) =>
+  status === 'queued' || status === 'downloading' || status === 'converting'
+
+export const DownloadsList = ({ downloads, onCancel }: DownloadsListProps) => {
   if (downloads.length === 0) {
     return (
       <section className="downloads-list">
@@ -33,8 +37,18 @@ export const DownloadsList = ({ downloads }: DownloadsListProps) => {
             {item.status === 'downloading' && 'Baixando'}
             {item.status === 'converting' && 'Convertendo'}
             {item.status === 'completed' && 'Concluído'}
+            {item.status === 'cancelled' && 'Cancelado'}
             {item.status === 'error' && 'Erro'}
           </span>
+          {isActive(item.status) && (
+            <button
+              type="button"
+              className="item-action cancel"
+              onClick={() => onCancel(item.id)}
+            >
+              Cancelar
+            </button>
+          )}
         </div>
       ))}
     </section>

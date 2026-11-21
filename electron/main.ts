@@ -1,8 +1,8 @@
 import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
-import { spawn } from 'child_process'
+import { spawn, type ChildProcess } from 'child_process'
 import log from 'electron-log'
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, unlinkSync } from 'fs'
 
 log.initialize()
 log.info('tui-tube starting...')
@@ -17,6 +17,51 @@ process.on('unhandledRejection', (reason) => {
 })
 
 let mainWindow: BrowserWindow | null = null
+
+/** Jobs em andamento, indexados pelo id gerado na UI (permite cancelar). */
+const jobs = new Map<string, ChildProcess>()
+const cancelledJobs = new Set<string>()
+/** Arquivos .part de cada job, usados na limpeza ao cancelar. */
+const jobPartials = new Map<string, Set<string>>()
+
+const killProcess = (child: ChildProcess) => {
+  if (!child.pid) return
+
+  if (process.platform === 'win32') {
+    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'])
+    return
+  }
+
+  child.kill('SIGTERM')
+}
+
+const trackDestination = (id: string, chunk: string) => {
+  const matches = chunk.matchAll(/\[download\] Destination: ([^\r\n]+)/g)
+
+  for (const match of matches) {
+    const destination = match[1].trim()
+    const partials = jobPartials.get(id) ?? new Set<string>()
+    partials.add(`${destination}.part`)
+    partials.add(destination)
+    jobPartials.set(id, partials)
+  }
+}
+
+const cleanupPartials = (id: string) => {
+  const paths = jobPartials.get(id)
+  if (!paths) return
+
+  for (const path of paths) {
+    if (!path.endsWith('.part')) continue
+    try {
+      if (existsSync(path)) unlinkSync(path)
+    } catch (error) {
+      log.warn('Falha ao remover parcial:', path, error)
+    }
+  }
+
+  jobPartials.delete(id)
+}
 
 const isDev = process.env.NODE_ENV !== 'production' && !app.isPackaged
 
@@ -43,6 +88,7 @@ const createYtDlpSpawn = (args: string[], cwd: string) => {
     '--extractor-retries', '5',
     '--fragment-retries', '5',
     '--no-warnings',
+    '--newline',
     '--extractor-args', 'youtube:player_client=android'
   ]
 
@@ -143,15 +189,18 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
     args.push('--progress')
 
     const ytdlp = createYtDlpSpawn(args, outputFolder)
+    jobs.set(id, ytdlp)
 
     let progressData = ''
 
     ytdlp.stdout.on('data', (data) => {
-      progressData += data.toString()
+      const chunk = data.toString()
+      progressData += chunk
+      trackDestination(id, chunk)
       mainWindow?.webContents.send('download-progress', {
         id,
         url,
-        output: data.toString()
+        output: chunk
       })
     })
 
@@ -161,11 +210,18 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
 
     ytdlp.on('close', (code) => {
       log.info('yt-dlp close:', code)
-      resolve({ success: code === 0, url, id })
+      jobs.delete(id)
+
+      const cancelled = cancelledJobs.delete(id)
+      if (cancelled) cleanupPartials(id)
+
+      resolve({ success: code === 0 && !cancelled, url, id, cancelled })
     })
 
     ytdlp.on('error', (err) => {
       log.error('yt-dlp error:', err)
+      jobs.delete(id)
+      cancelledJobs.delete(id)
       resolve({ success: false, url, id, error: err.message })
     })
   })
@@ -196,21 +252,31 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
     args.push('--progress')
 
     const ytdlp = createYtDlpSpawn(args, outputFolder)
+    jobs.set(id, ytdlp)
 
     ytdlp.stdout.on('data', (data) => {
+      const chunk = data.toString()
+      trackDestination(id, chunk)
       mainWindow?.webContents.send('download-progress', {
         id,
         url,
-        output: data.toString(),
+        output: chunk,
         isPlaylist: true
       })
     })
 
     ytdlp.on('close', (code) => {
-      resolve({ success: code === 0, url, id })
+      jobs.delete(id)
+
+      const cancelled = cancelledJobs.delete(id)
+      if (cancelled) cleanupPartials(id)
+
+      resolve({ success: code === 0 && !cancelled, url, id, cancelled })
     })
 
     ytdlp.on('error', (err) => {
+      jobs.delete(id)
+      cancelledJobs.delete(id)
       resolve({ success: false, url, id, error: err.message })
     })
   })
@@ -252,6 +318,15 @@ ipcMain.handle('get-video-info', async (_event, url: string) => {
       resolve({ success: false, error: err.message })
     })
   })
+})
+
+ipcMain.handle('cancel-download', (_event, id: string) => {
+  const child = jobs.get(id)
+  if (!child) return false
+
+  cancelledJobs.add(id)
+  killProcess(child)
+  return true
 })
 
 ipcMain.handle('open-folder', (_event, path: string) => {

@@ -58,6 +58,10 @@ export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent):
     return { ...item, progress: 100, status: 'completed', error: undefined }
   }
 
+  if (event.status === 'cancelled') {
+    return { ...item, status: 'cancelled', error: undefined }
+  }
+
   if (event.status === 'error') {
     return { ...item, status: 'error', error: event.error || 'Falha no download' }
   }

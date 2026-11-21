@@ -45,6 +45,7 @@ object DownloadEngine {
     private val initialized = AtomicBoolean(false)
     private val activeJobs = AtomicInteger(0)
     private val processIds = ConcurrentHashMap<String, String>()
+    private val cancelledJobs = ConcurrentHashMap.newKeySet<String>()
     private val jobs = ConcurrentHashMap<String, Job>()
 
     /** Tags do yt-dlp que indicam pós-processamento (ffmpeg), não download. */
@@ -187,12 +188,14 @@ object DownloadEngine {
                             }
                         },
                         onError = { error ->
+                            val wasCancelled = cancelledJobs.remove(id)
+
                             emit(
                                 DownloadEvent(
                                     id = id,
                                     url = url,
-                                    status = "error",
-                                    error = error.message ?: "Falha no download"
+                                    status = if (wasCancelled) "cancelled" else "error",
+                                    error = if (wasCancelled) null else (error.message ?: "Falha no download")
                                 )
                             )
                             if (cont.isActive) cont.resume(Unit)
@@ -215,6 +218,7 @@ object DownloadEngine {
                 )
             } finally {
                 if (workDir.exists()) workDir.deleteRecursively()
+                cancelledJobs.remove(id)
                 processIds.remove(id)
                 jobs.remove(id)
                 if (activeJobs.decrementAndGet() <= 0) {
@@ -250,7 +254,8 @@ object DownloadEngine {
         val targets = if (id != null) listOf(id) else processIds.keys.toList()
 
         for (key in targets) {
-            processIds[key]?.let { id -> runCatching { YoutubeDL.destroyProcessById(id) } }
+            cancelledJobs.add(key)
+            processIds[key]?.let { pid -> runCatching { YoutubeDL.destroyProcessById(pid) } }
             jobs[key]?.cancel()
         }
     }
