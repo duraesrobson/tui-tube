@@ -3,15 +3,10 @@ import { platform } from '../lib/platform'
 import { applyProgressToAll } from '../lib/downloadProgress'
 import { loadHistory, saveHistory } from '../lib/history'
 import { humanizeError } from '../lib/downloadErrors'
-import type { DownloadFormat, DownloadItem, DownloadOptions } from '../types'
+import type { DownloadItem, DownloadOptions, DownloadRequest } from '../types'
 
-export interface StartDownloadInput {
-  url: string
+export interface StartDownloadInput extends DownloadRequest {
   title: string
-  format: DownloadFormat
-  quality: string
-  outputFolder: string
-  playlist: boolean
 }
 
 interface UseDownloadsReturn {
@@ -21,6 +16,7 @@ interface UseDownloadsReturn {
   currentDownload: DownloadItem | undefined
   isDownloading: boolean
   startDownload: (input: StartDownloadInput) => Promise<void>
+  retryDownload: (item: DownloadItem) => Promise<void>
   cancelDownload: (id: string) => Promise<void>
   openDownload: (item: DownloadItem) => Promise<void>
   removeDownload: (item: DownloadItem) => Promise<void>
@@ -59,7 +55,7 @@ export const useDownloads = (): UseDownloadsReturn => {
   }, [])
 
   const runDownload = useCallback(
-    async (id: string, input: StartDownloadInput) => {
+    async (id: string, input: DownloadRequest) => {
       patch(id, { status: 'downloading', progress: 0, error: undefined, files: undefined })
 
       const options: DownloadOptions = {
@@ -93,6 +89,14 @@ export const useDownloads = (): UseDownloadsReturn => {
     async (input: StartDownloadInput) => {
       const id = crypto.randomUUID()
 
+      const request: DownloadRequest = {
+        url: input.url,
+        format: input.format,
+        quality: input.quality,
+        outputFolder: input.outputFolder,
+        playlist: input.playlist
+      }
+
       setDownloads((prev) => [
         ...prev,
         {
@@ -101,11 +105,21 @@ export const useDownloads = (): UseDownloadsReturn => {
           title: input.title || 'Video',
           format: input.format,
           status: 'queued',
-          progress: 0
+          progress: 0,
+          request
         }
       ])
 
-      await runDownload(id, input)
+      await runDownload(id, request)
+    },
+    [runDownload]
+  )
+
+  const retryDownload = useCallback(
+    async (item: DownloadItem) => {
+      if (!item.request) return
+
+      await runDownload(item.id, item.request)
     },
     [runDownload]
   )
@@ -172,6 +186,7 @@ export const useDownloads = (): UseDownloadsReturn => {
     currentDownload,
     isDownloading,
     startDownload,
+    retryDownload,
     cancelDownload,
     openDownload,
     removeDownload

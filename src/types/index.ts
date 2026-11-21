@@ -13,6 +13,14 @@ export type {
   VideoInfoResult
 } from './platform'
 
+export interface DownloadRequest {
+  url: string
+  format: 'mp3' | 'mp4'
+  quality: string
+  outputFolder: string
+  playlist: boolean
+}
+
 export interface DownloadItem {
   id: string
   url: string
@@ -22,6 +30,8 @@ export interface DownloadItem {
   progress: number
   error?: string
   files?: DownloadFile[]
+  /** Parâmetros originais, usados pelo "tentar de novo". */
+  request?: DownloadRequest
 }
 
 export interface QualityOption {

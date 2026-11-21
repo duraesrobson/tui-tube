@@ -6,6 +6,7 @@ interface DownloadsListProps {
   onCancel: (id: string) => void
   onOpen: (item: DownloadItem) => void
   onRemove: (item: DownloadItem) => void
+  onRetry: (item: DownloadItem) => void
 }
 
 const isActive = (status: DownloadItem['status']) =>
@@ -27,7 +28,8 @@ export const DownloadsList = ({
   downloads,
   onCancel,
   onOpen,
-  onRemove
+  onRemove,
+  onRetry
 }: DownloadsListProps) => {
   if (downloads.length === 0) {
     return (
@@ -82,6 +84,19 @@ export const DownloadsList = ({
             }}
           >
             Cancelar
+          </button>
+        )}
+
+        {(item.status === 'error' || item.status === 'cancelled') && item.request && (
+          <button
+            type="button"
+            className="item-action retry"
+            onClick={(event) => {
+              event.stopPropagation()
+              onRetry(item)
+            }}
+          >
+            Tentar
           </button>
         )}
 

@@ -51,6 +51,7 @@ function App() {
     isDownloading,
     currentDownload,
     startDownload,
+    retryDownload,
     cancelDownload,
     openDownload,
     removeDownload
@@ -185,6 +186,7 @@ function App() {
       <DownloadsList
         downloads={downloads}
         onCancel={cancelDownload}
+        onRetry={retryDownload}
         onOpen={openDownload}
         onRemove={removeDownload}
       />
