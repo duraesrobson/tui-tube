@@ -17,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 @CapacitorPlugin(
     name = "TuiTubeDownloader",
@@ -92,6 +93,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
             return
         }
 
+        val id = call.getString("id") ?: UUID.randomUUID().toString()
         val format = call.getString("format") ?: "mp3"
         val quality = call.getString("quality") ?: "0"
         val playlist = call.getBoolean("playlist") ?: false
@@ -99,6 +101,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
 
         DownloadEngine.startDownload(
             context = appContext,
+            id = id,
             url = url,
             format = format,
             quality = quality,
@@ -111,6 +114,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
             JSObject().apply {
                 put("success", true)
                 put("url", url)
+                put("id", id)
                 put("started", true)
             }
         )
@@ -118,7 +122,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
 
     @PluginMethod
     fun cancel(call: PluginCall) {
-        DownloadEngine.cancel(call.getString("url"))
+        DownloadEngine.cancel(call.getString("id"))
 
         call.resolve(JSObject().apply { put("success", true) })
     }
@@ -203,6 +207,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
 
     private fun notifyProgress(event: DownloadEvent) {
         val payload = JSObject().apply {
+            put("id", event.id)
             put("url", event.url)
             event.percent?.let { put("progress", it) }
             event.status?.let { put("status", it) }

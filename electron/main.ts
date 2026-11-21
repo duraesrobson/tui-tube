@@ -119,12 +119,13 @@ ipcMain.handle('get-default-download-path', () => {
 })
 
 ipcMain.handle('download-video', async (_event, url: string, options: {
+  id: string
   format: 'mp3' | 'mp4'
   quality: string
   outputFolder: string
 }) => {
   return new Promise((resolve) => {
-    const { format, quality, outputFolder } = options
+    const { id, format, quality, outputFolder } = options
 
     const args = [
       url,
@@ -148,6 +149,7 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
     ytdlp.stdout.on('data', (data) => {
       progressData += data.toString()
       mainWindow?.webContents.send('download-progress', {
+        id,
         url,
         output: data.toString()
       })
@@ -159,23 +161,24 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
 
     ytdlp.on('close', (code) => {
       log.info('yt-dlp close:', code)
-      resolve({ success: code === 0, url })
+      resolve({ success: code === 0, url, id })
     })
 
     ytdlp.on('error', (err) => {
       log.error('yt-dlp error:', err)
-      resolve({ success: false, url, error: err.message })
+      resolve({ success: false, url, id, error: err.message })
     })
   })
 })
 
 ipcMain.handle('download-playlist', async (_event, url: string, options: {
+  id: string
   format: 'mp3' | 'mp4'
   quality: string
   outputFolder: string
 }) => {
   return new Promise((resolve) => {
-    const { format, quality, outputFolder } = options
+    const { id, format, quality, outputFolder } = options
 
     const args = [
       url,
@@ -196,6 +199,7 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
 
     ytdlp.stdout.on('data', (data) => {
       mainWindow?.webContents.send('download-progress', {
+        id,
         url,
         output: data.toString(),
         isPlaylist: true
@@ -203,11 +207,11 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
     })
 
     ytdlp.on('close', (code) => {
-      resolve({ success: code === 0, url })
+      resolve({ success: code === 0, url, id })
     })
 
     ytdlp.on('error', (err) => {
-      resolve({ success: false, url, error: err.message })
+      resolve({ success: false, url, id, error: err.message })
     })
   })
 })

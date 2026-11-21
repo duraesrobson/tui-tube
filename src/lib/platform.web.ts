@@ -20,8 +20,8 @@ export const createWebPlatform = (): PlatformAPI => ({
     success: false,
     error: 'Abra o app desktop ou Android para buscar vídeos.'
   }),
-  downloadVideo: async (url) => ({ ...unsupported, url }),
-  downloadPlaylist: async (url) => ({ ...unsupported, url }),
+  downloadVideo: async (url, options) => ({ ...unsupported, url, id: options.id }),
+  downloadPlaylist: async (url, options) => ({ ...unsupported, url, id: options.id }),
   openFolder: async () => {},
   onDownloadProgress: () => () => {},
   windowMinimize: async () => {},

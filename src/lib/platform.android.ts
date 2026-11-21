@@ -19,6 +19,7 @@ interface ShareEvent {
 interface TuiTubeDownloaderPlugin {
   getVideoInfo(options: { url: string }): Promise<VideoInfoResult>
   download(options: {
+    id: string
     url: string
     format: DownloadFormat
     quality: string
@@ -86,6 +87,7 @@ export const androidPlatform: PlatformAPI = {
   getVideoInfo: (url) => Downloader.getVideoInfo({ url }),
   downloadVideo: (url, options) =>
     Downloader.download({
+      id: options.id,
       url,
       format: options.format,
       quality: options.quality,
@@ -93,6 +95,7 @@ export const androidPlatform: PlatformAPI = {
     }),
   downloadPlaylist: (url, options) =>
     Downloader.download({
+      id: options.id,
       url,
       format: options.format,
       quality: options.quality,

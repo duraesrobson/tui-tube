@@ -2,6 +2,8 @@ export type DownloadFormat = 'mp3' | 'mp4'
 export type PlatformName = 'electron' | 'android' | 'web'
 
 export interface DownloadOptions {
+  /** Identificador único do job, gerado na UI e usado em todos os eventos. */
+  id: string
   format: DownloadFormat
   quality: string
   outputFolder: string
@@ -23,6 +25,7 @@ export interface VideoInfoResult {
 export interface DownloadResult {
   success: boolean
   url: string
+  id?: string
   error?: string
   /**
    * true quando o download foi apenas iniciado (Android: serviço em background).
@@ -32,6 +35,7 @@ export interface DownloadResult {
 }
 
 export interface DownloadProgressEvent {
+  id: string
   url: string
   /** Linha crua do yt-dlp (usada para extrair progresso no desktop). */
   output?: string

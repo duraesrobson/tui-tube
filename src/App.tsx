@@ -116,7 +116,7 @@ function App() {
   const handleStartDownload = async () => {
     if (!url.trim() || !videoInfo) return
 
-    const id = Date.now().toString()
+    const id = crypto.randomUUID()
     const title = videoInfo.title || 'Video'
 
     const newItem: DownloadItem = {
@@ -135,7 +135,7 @@ function App() {
         prev.map((item) => (item.id === id ? { ...item, status: 'downloading' } : item))
       )
 
-      const options = { format, quality, outputFolder }
+      const options = { id, format, quality, outputFolder }
       const downloadFn = downloadPlaylist ? platform.downloadPlaylist : platform.downloadVideo
       const result = await downloadFn(url, options)
 

@@ -25,6 +25,7 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
 data class DownloadEvent(
+    val id: String,
     val url: String,
     val percent: Double? = null,
     val status: String? = null,
@@ -84,6 +85,7 @@ object DownloadEngine {
 
     fun startDownload(
         context: Context,
+        id: String,
         url: String,
         format: String,
         quality: String,
@@ -95,7 +97,7 @@ object DownloadEngine {
         DownloadService.start(appContext)
 
         scope.launch {
-            val workDir = File(appContext.cacheDir, "tui-tube/${System.currentTimeMillis()}")
+            val workDir = File(appContext.cacheDir, "tui-tube/$id")
 
             try {
                 ensureInitialized(appContext)
@@ -104,7 +106,7 @@ object DownloadEngine {
 
                 val request = buildRequest(url, format, quality, playlist, workDir)
                 val processId = UUID.randomUUID().toString()
-                processIds[url] = processId
+                processIds[id] = processId
 
                 suspendCancellableCoroutine<Unit> { cont ->
                     val job = YoutubeDL.download(
@@ -112,7 +114,7 @@ object DownloadEngine {
                         pId = processId,
                         progressCallBack = { percent, _, _ ->
                             if (percent >= 0f) {
-                                emit(DownloadEvent(url = url, percent = percent.toDouble()))
+                                emit(DownloadEvent(id = id, url = url, percent = percent.toDouble()))
                             }
                         },
                         onStartProcess = { /* processo já rastreado pelo yt-dlp */ },
@@ -120,11 +122,12 @@ object DownloadEngine {
                             scope.launch {
                                 try {
                                     if (response.exitCode == 0) {
-                                        handleSuccess(appContext, workDir, url, emit)
+                                        handleSuccess(appContext, workDir, id, url, emit)
                                     } else {
                                         val stderr = response.err
                                         emit(
                                             DownloadEvent(
+                                                id = id,
                                                 url = url,
                                                 status = "error",
                                                 error = stderr
@@ -137,6 +140,7 @@ object DownloadEngine {
                                     Log.e(TAG, "Falha ao finalizar download", e)
                                     emit(
                                         DownloadEvent(
+                                            id = id,
                                             url = url,
                                             status = "error",
                                             error = e.message ?: "Falha ao finalizar o download"
@@ -150,6 +154,7 @@ object DownloadEngine {
                         onError = { error ->
                             emit(
                                 DownloadEvent(
+                                    id = id,
                                     url = url,
                                     status = "error",
                                     error = error.message ?: "Falha no download"
@@ -159,14 +164,15 @@ object DownloadEngine {
                         }
                     )
 
-                    jobs[url] = job
+                    jobs[id] = job
                 }
             } catch (e: CancellationException) {
-                emit(DownloadEvent(url = url, status = "error", error = "Download cancelado"))
+                emit(DownloadEvent(id = id, url = url, status = "error", error = "Download cancelado"))
             } catch (e: Exception) {
                 Log.e(TAG, "Falha no download", e)
                 emit(
                     DownloadEvent(
+                        id = id,
                         url = url,
                         status = "error",
                         error = e.message ?: "Falha ao iniciar o download"
@@ -174,8 +180,8 @@ object DownloadEngine {
                 )
             } finally {
                 if (workDir.exists()) workDir.deleteRecursively()
-                processIds.remove(url)
-                jobs.remove(url)
+                processIds.remove(id)
+                jobs.remove(id)
                 if (activeJobs.decrementAndGet() <= 0) {
                     DownloadService.stop(appContext)
                 }
@@ -186,6 +192,7 @@ object DownloadEngine {
     private suspend fun handleSuccess(
         context: Context,
         workDir: File,
+        id: String,
         url: String,
         emit: (DownloadEvent) -> Unit
     ) {
@@ -193,19 +200,19 @@ object DownloadEngine {
             withContext(Dispatchers.IO) { MediaStorage.saveAll(context, workDir) }
         } catch (e: Exception) {
             Log.e(TAG, "Falha ao salvar arquivos", e)
-            emit(DownloadEvent(url = url, status = "error", error = e.message ?: "Falha ao salvar o arquivo"))
+            emit(DownloadEvent(id = id, url = url, status = "error", error = e.message ?: "Falha ao salvar o arquivo"))
             return
         }
 
         if (saved > 0) {
-            emit(DownloadEvent(url = url, status = "completed"))
+            emit(DownloadEvent(id = id, url = url, status = "completed"))
         } else {
-            emit(DownloadEvent(url = url, status = "error", error = "Nenhum arquivo foi gerado"))
+            emit(DownloadEvent(id = id, url = url, status = "error", error = "Nenhum arquivo foi gerado"))
         }
     }
 
-    fun cancel(url: String? = null) {
-        val targets = if (url != null) listOf(url) else processIds.keys.toList()
+    fun cancel(id: String? = null) {
+        val targets = if (id != null) listOf(id) else processIds.keys.toList()
 
         for (key in targets) {
             processIds[key]?.let { id -> runCatching { YoutubeDL.destroyProcessById(id) } }

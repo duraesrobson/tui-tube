@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 export interface DownloadOptions {
+  id: string
   format: 'mp3' | 'mp4'
   quality: string
   outputFolder: string
@@ -22,9 +23,11 @@ const api = {
     ipcRenderer.invoke('download-playlist', url, options),
   getVideoInfo: (url: string) => ipcRenderer.invoke('get-video-info', url),
   openFolder: (path: string) => ipcRenderer.invoke('open-folder', path),
-  onDownloadProgress: (callback: (data: { url: string; output: string; isPlaylist?: boolean }) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, data: { url: string; output: string; isPlaylist?: boolean }) =>
-      callback(data)
+  onDownloadProgress: (callback: (data: { id: string; url: string; output: string; isPlaylist?: boolean }) => void) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      data: { id: string; url: string; output: string; isPlaylist?: boolean }
+    ) => callback(data)
 
     ipcRenderer.on('download-progress', listener)
 

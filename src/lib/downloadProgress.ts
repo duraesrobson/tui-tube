@@ -19,7 +19,7 @@ export const parsePercent = (output?: string): number | null => {
  * depois de chegar a 100%.
  */
 export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent): DownloadItem => {
-  if (item.url !== event.url) return item
+  if (item.id !== event.id) return item
 
   const progress = typeof event.progress === 'number' ? event.progress : parsePercent(event.output)
 

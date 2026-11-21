@@ -28,7 +28,7 @@ export const useDownloads = (): UseDownloadsReturn => {
     format: 'mp3' | 'mp4',
     downloadPlaylist = false
   ) => {
-    const id = Date.now().toString()
+    const id = crypto.randomUUID()
     const newItem: DownloadItem = {
       id,
       url,
@@ -46,6 +46,7 @@ export const useDownloads = (): UseDownloadsReturn => {
       )
 
       const options: DownloadOptions = {
+        id,
         format,
         quality: '0',
         outputFolder: ''
