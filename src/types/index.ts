@@ -9,6 +9,7 @@ export type {
   EngineUpdateResult,
   PlatformAPI,
   PlatformName,
+  VideoFormat,
   VideoInfo,
   VideoInfoResult
 } from './platform'

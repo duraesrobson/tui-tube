@@ -323,6 +323,8 @@ object DownloadEngine {
         "720p" -> "bestvideo[height<=720]+bestaudio/best[height<=720]/best"
         "480p" -> "bestvideo[height<=480]+bestaudio/best[height<=480]/best"
         "360p" -> "bestvideo[height<=360]+bestaudio/best[height<=360]/best"
-        else -> "bestvideo+bestaudio/best"
+        "" -> "bestvideo+bestaudio/best"
+        // Seletor vindo dos formatos reais (ex.: "137+bestaudio/137").
+        else -> quality
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './styles/main.scss'
 import {
   Header,
@@ -19,23 +19,23 @@ import { platform } from './lib/platform'
 import { normalizeLink, parseLink } from './lib/youtubeUrl'
 import type { QualityMap } from './types'
 
-const qualities: QualityMap = {
-  mp3: [
-    { value: '0', label: 'Melhor' },
-    { value: '320', label: '320 kbps' },
-    { value: '256', label: '256 kbps' },
-    { value: '192', label: '192 kbps' },
-    { value: '128', label: '128 kbps' },
-    { value: '96', label: '96 kbps' },
-  ],
-  mp4: [
-    { value: 'bestvideo+bestaudio/best', label: 'Melhor' },
-    { value: '1080p', label: '1080p' },
-    { value: '720p', label: '720p' },
-    { value: '480p', label: '480p' },
-    { value: '360p', label: '360p' },
-  ]
-}
+const MP3_QUALITIES: QualityMap['mp3'] = [
+  { value: '0', label: 'Melhor' },
+  { value: '320', label: '320 kbps' },
+  { value: '256', label: '256 kbps' },
+  { value: '192', label: '192 kbps' },
+  { value: '128', label: '128 kbps' },
+  { value: '96', label: '96 kbps' }
+]
+
+/** Usado quando o yt-dlp não devolve a lista de formatos. */
+const MP4_FALLBACK: QualityMap['mp4'] = [
+  { value: 'bestvideo+bestaudio/best', label: 'Melhor' },
+  { value: '1080p', label: '1080p' },
+  { value: '720p', label: '720p' },
+  { value: '480p', label: '480p' },
+  { value: '360p', label: '360p' }
+]
 
 function App() {
   const [url, setUrl] = useState('')
@@ -45,6 +45,21 @@ function App() {
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
+
+  const qualities = useMemo<QualityMap>(() => {
+    const formats = videoInfo?.formats ?? []
+
+    return {
+      mp3: MP3_QUALITIES,
+      mp4:
+        formats.length > 0
+          ? [
+              { value: 'bestvideo+bestaudio/best', label: 'Melhor' },
+              ...formats.map((format) => ({ value: format.selector, label: format.label }))
+            ]
+          : MP4_FALLBACK
+    }
+  }, [videoInfo])
 
   const {
     downloads,
@@ -96,6 +111,20 @@ function App() {
       unsubscribe?.()
     }
   }, [])
+
+  // Mantém a qualidade selecionada válida quando os formatos chegam.
+  useEffect(() => {
+    const options = qualities[format]
+
+    if (!options.some((option) => option.value === quality)) {
+      setQuality(options[0]?.value ?? '')
+    }
+  }, [qualities, format, quality])
+
+  const handleFormatChange = (nextFormat: 'mp3' | 'mp4') => {
+    setFormat(nextFormat)
+    setQuality((nextFormat === 'mp3' ? qualities.mp3 : qualities.mp4)[0]?.value ?? '')
+  }
 
   const handlePaste = async () => {
     const text = await platform.readClipboard()
@@ -165,7 +194,7 @@ function App() {
           outputFolder={outputFolder}
           qualities={qualities}
           canSelectFolder={platform.canSelectFolder}
-          onFormatChange={setFormat}
+          onFormatChange={handleFormatChange}
           onQualityChange={setQuality}
           onSelectFolder={handleSelectFolder}
           onOpenFolder={handleOpenFolder}

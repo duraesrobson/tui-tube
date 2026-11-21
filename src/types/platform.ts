@@ -9,11 +9,26 @@ export interface DownloadOptions {
   outputFolder: string
 }
 
+export interface VideoFormat {
+  /** format_id do yt-dlp (ou seletor pronto no campo selector). */
+  id: string
+  label: string
+  ext: string
+  height?: number
+  fps?: number
+  size?: number
+  hasAudio: boolean
+  /** Valor pronto para passar em -f. */
+  selector: string
+}
+
 export interface VideoInfo {
   title?: string
   uploader?: string
   duration?: number
   thumbnail?: string
+  /** Formatos de vídeo disponíveis, já filtrados e ordenados. */
+  formats?: VideoFormat[]
 }
 
 export interface VideoInfoResult {

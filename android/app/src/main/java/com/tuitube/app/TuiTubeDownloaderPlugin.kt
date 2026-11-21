@@ -50,6 +50,24 @@ class TuiTubeDownloaderPlugin : Plugin() {
                     DownloadEngine.getInfo(context, url)
                 }
 
+                val formats = JSArray()
+                info.formats?.forEach { format ->
+                    if (format.vcodec == "none" || format.height <= 0) return@forEach
+
+                    formats.put(
+                        JSObject().apply {
+                            put("format_id", format.formatId)
+                            put("ext", format.ext)
+                            put("height", format.height)
+                            put("fps", format.fps)
+                            put("filesize", format.fileSize)
+                            put("filesize_approx", format.fileSizeApproximate)
+                            put("vcodec", format.vcodec)
+                            put("acodec", format.acodec)
+                        }
+                    )
+                }
+
                 val result = JSObject().apply {
                     put("success", true)
                     put("info", JSObject().apply {
@@ -57,6 +75,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
                         put("uploader", info.uploader ?: "")
                         put("duration", info.duration)
                         put("thumbnail", info.thumbnail ?: "")
+                        put("formats", formats)
                     })
                 }
 

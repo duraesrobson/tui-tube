@@ -1,5 +1,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import type { PluginListenerHandle } from '@capacitor/core'
+import { normalizeVideoInfo } from './formats'
 import type {
   DownloadFormat,
   DownloadProgressEvent,
@@ -87,7 +88,16 @@ export const androidPlatform: PlatformAPI = {
   supportsEngineUpdate: true,
   getDefaultDownloadPath: async () => ANDROID_DESTINATION_LABEL,
   selectFolder: async () => null,
-  getVideoInfo: (url) => Downloader.getVideoInfo({ url }),
+  getVideoInfo: async (url) => {
+    const result = await Downloader.getVideoInfo({ url })
+
+    if (!result.success || !result.info) return result
+
+    return {
+      ...result,
+      info: normalizeVideoInfo(result.info as Parameters<typeof normalizeVideoInfo>[0])
+    }
+  },
   readClipboard: async () => {
     const { text } = await Downloader.readClipboard()
 

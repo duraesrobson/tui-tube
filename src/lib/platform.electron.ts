@@ -1,4 +1,5 @@
 import type { ElectronBridge, PlatformAPI } from '../types/platform'
+import { normalizeVideoInfo } from './formats'
 
 /**
  * Adapta a API do preload do Electron ao contrato PlatformAPI.
@@ -11,7 +12,16 @@ export const createElectronPlatform = (bridge: ElectronBridge): PlatformAPI => (
   supportsEngineUpdate: false,
   getDefaultDownloadPath: () => bridge.getDefaultDownloadPath(),
   selectFolder: () => bridge.selectFolder(),
-  getVideoInfo: (url) => bridge.getVideoInfo(url),
+  getVideoInfo: async (url) => {
+    const result = await bridge.getVideoInfo(url)
+
+    if (!result.success || !result.info) return result
+
+    return {
+      ...result,
+      info: normalizeVideoInfo(result.info as Parameters<typeof normalizeVideoInfo>[0])
+    }
+  },
   readClipboard: () => bridge.readClipboard(),
   downloadVideo: (url, options) => bridge.downloadVideo(url, options),
   downloadPlaylist: (url, options) => bridge.downloadPlaylist(url, options),
