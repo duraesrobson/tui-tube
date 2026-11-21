@@ -14,7 +14,7 @@ export const DownloadButton = ({ format, isLoading, disabled, onClick }: Downloa
       onClick={onClick}
       disabled={disabled || isLoading}
     >
-      {isLoading ? 'Baixando...' : `Baixar ${format.toUpperCase()}`}
+      {isLoading ? 'Preparando...' : `Baixar ${format.toUpperCase()}`}
     </button>
   )
 }

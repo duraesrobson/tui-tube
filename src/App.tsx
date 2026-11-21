@@ -46,6 +46,7 @@ function App() {
   const [outputFolder, setOutputFolder] = useState('')
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set())
+  const [isPreparing, setIsPreparing] = useState(false)
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
 
@@ -77,6 +78,7 @@ function App() {
     atCapacity,
     currentDownload,
     startDownload,
+    startPlaylistDownloads,
     retryDownload,
     cancelDownload,
     openDownload,
@@ -162,11 +164,6 @@ function App() {
   const canDownload = Boolean(url.trim()) &&
     (Boolean(videoInfo) || (downloadPlaylist && playlist.items.length > 0))
 
-  const selectedParam = useMemo(
-    () => [...selectedItems].sort((a, b) => a - b).join(','),
-    [selectedItems]
-  )
-
   const toggleItem = (index: number) => {
     setSelectedItems((prev) => {
       const next = new Set(prev)
@@ -175,17 +172,34 @@ function App() {
     })
   }
 
-  const handleStartDownload = () => {
-    if (!canDownload) return
+  const handleStartDownload = async () => {
+    if (!canDownload || isPreparing) return
+
+    // Playlist: cada item vira um download próprio.
+    if (downloadPlaylist && playlistUrl) {
+      setIsPreparing(true)
+
+      try {
+        const items =
+          selectedItems.size > 0
+            ? playlist.items.filter((item) => selectedItems.has(item.index))
+            : await playlist.loadAll()
+
+        startPlaylistDownloads(items, { format, quality, outputFolder })
+      } finally {
+        setIsPreparing(false)
+      }
+
+      return
+    }
 
     void startDownload({
       url: normalizeLink(url) ?? url,
-      title: videoInfo?.title || (downloadPlaylist ? 'Playlist' : 'Video'),
+      title: videoInfo?.title || 'Video',
       format,
       quality,
       outputFolder,
-      playlist: downloadPlaylist,
-      playlistItems: downloadPlaylist ? selectedParam : undefined
+      playlist: false
     })
   }
 
@@ -243,8 +257,8 @@ function App() {
 
         <DownloadButton
           format={format}
-          isLoading={false}
-          disabled={!canDownload || atCapacity}
+          isLoading={isPreparing}
+          disabled={!canDownload || atCapacity || isPreparing}
           onClick={handleStartDownload}
         />
       </section>

@@ -3,7 +3,7 @@ import { platform } from '../lib/platform'
 import { applyProgressToAll } from '../lib/downloadProgress'
 import { loadHistory, saveHistory } from '../lib/history'
 import { humanizeError } from '../lib/downloadErrors'
-import type { DownloadItem, DownloadOptions, DownloadRequest } from '../types'
+import type { DownloadItem, DownloadOptions, DownloadRequest, PlaylistItem } from '../types'
 
 export interface StartDownloadInput extends DownloadRequest {
   title: string
@@ -18,6 +18,10 @@ interface UseDownloadsReturn {
   isDownloading: boolean
   atCapacity: boolean
   startDownload: (input: StartDownloadInput) => Promise<void>
+  startPlaylistDownloads: (
+    items: PlaylistItem[],
+    base: Omit<StartDownloadInput, 'url' | 'title' | 'playlist' | 'playlistItems'>
+  ) => void
   retryDownload: (item: DownloadItem) => Promise<void>
   cancelDownload: (id: string) => Promise<void>
   openDownload: (item: DownloadItem) => Promise<void>
@@ -124,6 +128,43 @@ export const useDownloads = (): UseDownloadsReturn => {
     []
   )
 
+  /** Cria um download independente para cada item selecionado da playlist. */
+  const startPlaylistDownloads = useCallback(
+    (
+      playlistItems: PlaylistItem[],
+      base: Omit<StartDownloadInput, 'url' | 'title' | 'playlist' | 'playlistItems'>
+    ) => {
+      if (playlistItems.length === 0) return
+
+      const created: DownloadItem[] = playlistItems.flatMap((item) => {
+        if (!item.videoId) return []
+
+        const url = `https://www.youtube.com/watch?v=${item.videoId}`
+
+        return [
+          {
+            id: crypto.randomUUID(),
+            url,
+            title: item.title || 'Item da playlist',
+            format: base.format,
+            status: 'queued',
+            progress: 0,
+            request: {
+              url,
+              format: base.format,
+              quality: base.quality,
+              outputFolder: base.outputFolder,
+              playlist: false
+            }
+          }
+        ]
+      })
+
+      setDownloads((prev) => [...prev, ...created])
+    },
+    []
+  )
+
   const retryDownload = useCallback(
     async (item: DownloadItem) => {
       if (!item.request) return
@@ -216,6 +257,7 @@ export const useDownloads = (): UseDownloadsReturn => {
     isDownloading,
     atCapacity,
     startDownload,
+    startPlaylistDownloads,
     retryDownload,
     cancelDownload,
     openDownload,

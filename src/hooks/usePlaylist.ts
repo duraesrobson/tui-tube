@@ -12,6 +12,7 @@ interface UsePlaylistReturn {
   isLoadingMore: boolean
   error: string | null
   loadMore: () => void
+  loadAll: (maxItems?: number) => Promise<PlaylistItem[]>
   reset: () => void
 }
 
@@ -87,6 +88,34 @@ export const usePlaylist = (url: string | null, enabled: boolean): UsePlaylistRe
     void load(items.length + 1, true)
   }, [hasMore, isLoading, isLoadingMore, items.length, load])
 
+  /** Busca as páginas restantes e devolve a lista completa (com teto). */
+  const loadAll = useCallback(
+    async (maxItems = 200): Promise<PlaylistItem[]> => {
+      if (!url) return []
+
+      let result = [...items]
+      let more = hasMore
+
+      while (more && result.length < maxItems) {
+        const page = await platform.getPlaylistInfo(url, {
+          start: result.length + 1,
+          pageSize: 50
+        })
+
+        if (!page.success) break
+
+        const pageItems = page.items ?? []
+        if (pageItems.length === 0) break
+
+        result = [...result, ...pageItems]
+        more = Boolean(page.hasMore)
+      }
+
+      return result.slice(0, maxItems)
+    },
+    [url, items, hasMore]
+  )
+
   const reset = useCallback(() => {
     requestRef.current += 1
     setItems([])
@@ -94,5 +123,5 @@ export const usePlaylist = (url: string | null, enabled: boolean): UsePlaylistRe
     setError(null)
   }, [])
 
-  return { items, hasMore, isLoading, isLoadingMore, error, loadMore, reset }
+  return { items, hasMore, isLoading, isLoadingMore, error, loadMore, loadAll, reset }
 }
