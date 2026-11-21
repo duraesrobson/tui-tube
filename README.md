@@ -22,10 +22,15 @@
 | 🎬 **MP4** | Vídeo até 1080p, com merge de vídeo + áudio no próprio aparelho |
 | 📚 **Playlists** | Baixa a playlist inteira com prefixo de índice no nome |
 | 🔎 **Prévia** | Busca título, canal e duração antes de baixar |
-| 📂 **Destino** | Desktop: pasta escolhida pelo usuário · Android: `Download/tui-tube` |
+| 📂 **Destino** | Separado por tipo: `Audio/` e `Video/` (desktop: dentro da pasta escolhida; Android: `Download/tui-tube`) |
 | 📤 **Compartilhar** | No Android, aparece no menu "Compartilhar" do YouTube e abre com o link |
 | ⏱️ **Background** | No Android o download continua com a tela apagada (foreground service) |
+| ⏹️ **Cancelar** | Interrompe o download em andamento e descarta o parcial |
+| ▶️ **Abrir / ouvir** | Toque no item concluído e escolha o app (player, VLC, galeria) |
+| 🗑️ **Remover** | Apaga o arquivo do dispositivo e o item da lista, com confirmação |
 | 🔄 **Motor atualizável** | Botão para atualizar o `yt-dlp` sem reinstalar o app |
+
+O progresso mostra a fase real: **baixando → convertendo → pronto**. A lista separa *Em andamento* de *Concluídos*, e o histórico sobrevive a fechar o app.
 
 Interface em JetBrains Mono, paleta verde-fósforo — e a fonte vai **embarcada** (funciona offline).
 
@@ -107,10 +112,10 @@ O processo principal dá `spawn` no binário `bin/yt-dlp` e repassa o `stdout` p
 
 | Peça | Papel |
 |---|---|
-| `TuiTubeDownloaderPlugin` | Ponte JS ↔ nativo (`getVideoInfo`, `download`, `cancel`, `updateEngine`, `getSharedLink`) |
+| `TuiTubeDownloaderPlugin` | Ponte JS ↔ nativo (`getVideoInfo`, `download`, `cancel`, `openFile`, `deleteFile`, `updateEngine`, `getSharedLink`) |
 | `DownloadEngine` | Fila, montagem dos argumentos do yt-dlp, cancelamento por process id, auto-update |
 | `DownloadService` | Foreground service `dataSync` + notificação: o download não morre em background |
-| `MediaStorage` | yt-dlp grava em `cacheDir` → o app copia para `Download/tui-tube` via MediaStore |
+| `MediaStorage` | yt-dlp grava em `cacheDir` → o app copia para `Download/tui-tube/{Audio,Video}` via MediaStore |
 | `ShareIntake` | Lê o `ACTION_SEND`, extrai a URL (YouTube primeiro, depois qualquer link) |
 
 Detalhe importante: desde o Android 10 o app **não pode executar** binários gravados em `filesDir` (W^X/SELinux). Por isso o motor vem como `lib*.so` em `jniLibs` e roda de `nativeLibraryDir` — daí `useLegacyPackaging = true` e `android:extractNativeLibs="true"`.
@@ -123,7 +128,8 @@ Detalhe importante: desde o Android 10 o app **não pode executar** binários gr
 src/
   App.tsx                  # Tela principal
   lib/platform*.ts         # Contrato PlatformAPI e implementações
-  lib/downloadProgress.ts  # Parser de progresso compartilhado
+  lib/downloadProgress.ts  # Fases e progresso compartilhados
+  lib/history.ts           # Histórico persistido (localStorage)
   hooks/                   # useVideo, useDownloads
   components/              # Header, UrlInput, OptionsGrid, DownloadsList...
   styles/                  # Tema terminal + fontes locais
@@ -149,6 +155,8 @@ bin/yt-dlp                 # Binário do desktop
 - **APK ~61 MB** — Python + ffmpeg embarcados. Existe a variante `youtubedl-boom-lite` com ffmpeg reduzido (~7 MB) se o tamanho incomodar.
 - **YouTube e JS runtime** — o yt-dlp atual usa um runtime JS (Deno) para extração completa; ele não é embarcado, então alguns vídeos podem oferecer menos formatos. O botão **Atualizar** resolve a maioria dos casos de extractor desatualizado.
 - **1080p** exige merge no aparelho, o que é mais lento e consome mais bateria que baixar um arquivo pronto.
+- **Remover no Android 10** pode abrir um diálogo de confirmação do sistema (política de scoped storage).
+- **Abrir** depende de existir um app instalado que aceite `audio/mpeg` ou `video/mp4`; sem player, o card mostra o erro.
 
 ---
 

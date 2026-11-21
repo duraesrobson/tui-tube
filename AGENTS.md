@@ -20,6 +20,7 @@ YouTube to MP3/MP4 converter with terminal-style UI (Electron + React no desktop
 ```
 src/
   App.tsx              # Main React UI
+  lib/history.ts       # Histórico persistido de downloads concluídos
   lib/platform.ts      # Seleciona a implementação por ambiente (electron/android/web)
   lib/platform.*.ts    # Implementações do contrato PlatformAPI
   styles/main.scss     # Estilos globais + safe areas
@@ -67,8 +68,13 @@ bin/
 - APK somente `arm64-v8a` (`ndk.abiFilters`) — o motor embarca Python + ffmpeg (~50 MB).
 - `useLegacyPackaging = true` + `android:extractNativeLibs="true"` são obrigatórios:
   Android 10+ só permite executar binários de `nativeLibraryDir`.
-- Downloads vão para `Download/tui-tube` via MediaStore; o yt-dlp escreve em `cacheDir`.
+- Downloads vão para `Download/tui-tube/Audio` ou `/Video` via MediaStore; o yt-dlp
+  escreve em `cacheDir` e o `MediaStorage` publica (retornando uri/nome/mime/tamanho).
 - `DownloadService` (foreground/dataSync) mantém o download vivo em segundo plano.
+- Cada job tem um `id` gerado na UI; eventos, cancelamento e ações usam esse id.
+- Abrir/remover no Android usam a content URI do MediaStore (`ACTION_VIEW` e
+  `ContentResolver.delete`). Cancelar mantém o processo do ffmpeg no mesmo kill.
+- Histórico de itens encerrados fica em `localStorage` (`tui-tube.history.v1`).
 - Assinatura: `android/keystore/release.keystore` + `android/keystore.properties`
   (ambos ignorados pelo git).
 - Build local exige JDK 21 (Capacitor 8) e Android SDK 36. `android/gradle.properties`
