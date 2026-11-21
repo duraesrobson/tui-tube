@@ -244,10 +244,6 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
 
     args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
-    if (playlistItems?.trim()) {
-      args.push('--playlist-items', playlistItems.trim())
-    }
-
     const ytdlp = createYtDlpSpawn(args, targetFolder)
     jobs.set(id, ytdlp)
 
