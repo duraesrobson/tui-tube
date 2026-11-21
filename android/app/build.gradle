@@ -74,7 +74,8 @@ dependencies {
     implementation project(':capacitor-android')
 
     // Motor de download: yt-dlp + Python + ffmpeg empacotados como libs nativas.
-    implementation "io.github.farimarwat:youtubedl-boom:1.0.24"
+    // Variante "lite": ffmpeg reduzido (~7 MB) mantendo merge e extração de áudio.
+    implementation "io.github.farimarwat:youtubedl-boom-lite:1.0.24"
     implementation "io.github.farimarwat:youtubedl-boom-commons:1.3"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2"
 
