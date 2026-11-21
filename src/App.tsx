@@ -16,6 +16,7 @@ import {
 import { useVideo } from './hooks/useVideo'
 import { useDownloads } from './hooks/useDownloads'
 import { platform } from './lib/platform'
+import { normalizeLink, parseLink } from './lib/youtubeUrl'
 import type { QualityMap } from './types'
 
 const qualities: QualityMap = {
@@ -95,6 +96,13 @@ function App() {
     }
   }, [])
 
+  const handlePaste = async () => {
+    const text = await platform.readClipboard()
+    if (!text.trim()) return
+
+    setUrl(parseLink(text)?.url ?? text.trim())
+  }
+
   const handleSelectFolder = async () => {
     if (!platform.canSelectFolder) return
 
@@ -114,7 +122,7 @@ function App() {
     if (!url.trim() || !videoInfo) return
 
     void startDownload({
-      url,
+      url: normalizeLink(url) ?? url,
       title: videoInfo.title || 'Video',
       format,
       quality,
@@ -133,6 +141,7 @@ function App() {
           value={url}
           onChange={setUrl}
           onFetchInfo={() => fetchVideoInfo(url)}
+          onPaste={handlePaste}
           isLoading={isLoading || isDownloading}
           disabled={!url.trim()}
         />

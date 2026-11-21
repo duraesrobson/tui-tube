@@ -77,6 +77,7 @@ export interface PlatformAPI {
   getDefaultDownloadPath(): Promise<string>
   selectFolder(): Promise<string | null>
   getVideoInfo(url: string): Promise<VideoInfoResult>
+  readClipboard(): Promise<string>
   downloadVideo(url: string, options: DownloadOptions): Promise<DownloadResult>
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
   cancelDownload(id: string): Promise<void>
@@ -104,6 +105,7 @@ export interface ElectronBridge {
   openFile(file: DownloadFile): Promise<void>
   deleteFile(file: DownloadFile): Promise<void>
   getVideoInfo(url: string): Promise<VideoInfoResult>
+  readClipboard(): Promise<string>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void
   windowMinimize(): Promise<void>

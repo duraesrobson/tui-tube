@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
+import { app, BrowserWindow, clipboard, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
 import { spawn, type ChildProcess } from 'child_process'
 import log from 'electron-log'
@@ -397,6 +397,8 @@ ipcMain.handle('cancel-download', (_event, id: string) => {
   killProcess(child)
   return true
 })
+
+ipcMain.handle('read-clipboard', () => clipboard.readText())
 
 ipcMain.handle('open-file', async (_event, path: string) => {
   const error = await shell.openPath(path)

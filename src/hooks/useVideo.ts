@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { platform } from '../lib/platform'
+import { parseLink } from '../lib/youtubeUrl'
 import type { VideoInfo } from '../types'
 
 interface UseVideoReturn {
@@ -18,12 +19,19 @@ export const useVideo = (url: string): UseVideoReturn => {
   const fetchVideoInfo = useCallback(async (urlToFetch: string) => {
     if (!urlToFetch.trim()) return
 
+    const parsed = parseLink(urlToFetch)
+    if (!parsed) {
+      setVideoInfo(null)
+      setError('Cole um link válido (youtube.com, youtu.be ou playlist).')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setVideoInfo(null)
 
     try {
-      const result = await platform.getVideoInfo(urlToFetch)
+      const result = await platform.getVideoInfo(parsed.url)
       if (result.success && result.info) {
         setVideoInfo(result.info)
       } else {

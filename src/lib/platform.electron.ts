@@ -12,6 +12,7 @@ export const createElectronPlatform = (bridge: ElectronBridge): PlatformAPI => (
   getDefaultDownloadPath: () => bridge.getDefaultDownloadPath(),
   selectFolder: () => bridge.selectFolder(),
   getVideoInfo: (url) => bridge.getVideoInfo(url),
+  readClipboard: () => bridge.readClipboard(),
   downloadVideo: (url, options) => bridge.downloadVideo(url, options),
   downloadPlaylist: (url, options) => bridge.downloadPlaylist(url, options),
   cancelDownload: (id) => bridge.cancelDownload(id),

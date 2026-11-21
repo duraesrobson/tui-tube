@@ -18,6 +18,7 @@ interface ShareEvent {
 
 interface TuiTubeDownloaderPlugin {
   getVideoInfo(options: { url: string }): Promise<VideoInfoResult>
+  readClipboard(): Promise<{ text: string }>
   download(options: {
     id: string
     url: string
@@ -87,6 +88,11 @@ export const androidPlatform: PlatformAPI = {
   getDefaultDownloadPath: async () => ANDROID_DESTINATION_LABEL,
   selectFolder: async () => null,
   getVideoInfo: (url) => Downloader.getVideoInfo({ url }),
+  readClipboard: async () => {
+    const { text } = await Downloader.readClipboard()
+
+    return text ?? ''
+  },
   downloadVideo: (url, options) =>
     Downloader.download({
       id: options.id,

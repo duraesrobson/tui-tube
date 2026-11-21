@@ -25,6 +25,7 @@ const api = {
   openFile: (file: { uri: string }) => ipcRenderer.invoke('open-file', file.uri),
   deleteFile: (file: { uri: string }) => ipcRenderer.invoke('delete-file', file.uri),
   getVideoInfo: (url: string) => ipcRenderer.invoke('get-video-info', url),
+  readClipboard: () => ipcRenderer.invoke('read-clipboard'),
   openFolder: (path: string) => ipcRenderer.invoke('open-folder', path),
   onDownloadProgress: (callback: (data: { id: string; url: string; output: string; isPlaylist?: boolean }) => void) => {
     const listener = (

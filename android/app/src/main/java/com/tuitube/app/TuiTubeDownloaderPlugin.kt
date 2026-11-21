@@ -2,6 +2,8 @@ package com.tuitube.app
 
 import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -154,6 +156,20 @@ class TuiTubeDownloaderPlugin : Plugin() {
                 )
             }
         }
+    }
+
+    /** Lê a área de transferência (o app está em foco quando o botão é tocado). */
+    @PluginMethod
+    fun readClipboard(call: PluginCall) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val text = clipboard
+            ?.primaryClip
+            ?.takeIf { it.itemCount > 0 }
+            ?.getItemAt(0)
+            ?.coerceToText(context)
+            ?.toString()
+
+        call.resolve(JSObject().apply { put("text", text ?: "") })
     }
 
     /** Abre o arquivo no app padrão do usuário (player, visualizador...). */

@@ -25,6 +25,13 @@ export const createWebPlatform = (): PlatformAPI => ({
   cancelDownload: async () => {},
   openFile: async () => {},
   deleteFile: async () => {},
+  readClipboard: async () => {
+    try {
+      return await navigator.clipboard.readText()
+    } catch {
+      return ''
+    }
+  },
   openFolder: async () => {},
   onDownloadProgress: () => () => {},
   windowMinimize: async () => {},
