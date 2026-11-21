@@ -159,7 +159,7 @@ object DownloadEngine {
                             scope.launch {
                                 try {
                                     if (response.exitCode == 0) {
-                                        handleSuccess(appContext, workDir, id, url, emit)
+                                        handleSuccess(appContext, workDir, id, url, format, emit)
                                     } else {
                                         val stderr = response.err
                                         emit(
@@ -234,10 +234,13 @@ object DownloadEngine {
         workDir: File,
         id: String,
         url: String,
+        format: String,
         emit: (DownloadEvent) -> Unit
     ) {
+        val folder = if (format == "mp3") "Audio" else "Video"
+
         val saved = try {
-            withContext(Dispatchers.IO) { MediaStorage.saveAll(context, workDir) }
+            withContext(Dispatchers.IO) { MediaStorage.saveAll(context, workDir, folder) }
         } catch (e: Exception) {
             Log.e(TAG, "Falha ao salvar arquivos", e)
             emit(DownloadEvent(id = id, url = url, status = "error", error = e.message ?: "Falha ao salvar o arquivo"))

@@ -16,6 +16,7 @@ import {
 import { useVideo } from './hooks/useVideo'
 import { platform } from './lib/platform'
 import { applyProgressToAll } from './lib/downloadProgress'
+import { loadHistory, saveHistory } from './lib/history'
 import type { DownloadItem, QualityMap } from './types'
 
 const qualities: QualityMap = {
@@ -42,7 +43,7 @@ function App() {
   const [quality, setQuality] = useState('0')
   const [outputFolder, setOutputFolder] = useState('')
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
-  const [downloads, setDownloads] = useState<DownloadItem[]>([])
+  const [downloads, setDownloads] = useState<DownloadItem[]>(() => loadHistory())
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
 
@@ -85,6 +86,10 @@ function App() {
       unsubscribe?.()
     }
   }, [])
+
+  useEffect(() => {
+    saveHistory(downloads)
+  }, [downloads])
 
   useEffect(() => {
     const unsubscribe = platform.onDownloadProgress((event) => {

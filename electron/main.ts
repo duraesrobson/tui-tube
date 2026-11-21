@@ -226,9 +226,12 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
   return new Promise((resolve) => {
     const { id, format, quality, outputFolder } = options
 
+    const targetFolder = join(outputFolder, format === 'mp3' ? 'Audio' : 'Video')
+    if (!existsSync(targetFolder)) mkdirSync(targetFolder, { recursive: true })
+
     const args = [
       url,
-      '-o', join(outputFolder, '%(title)s.%(ext)s'),
+      '-o', join(targetFolder, '%(title)s.%(ext)s'),
       '--no-playlist'
     ]
 
@@ -241,7 +244,7 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
 
     args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
-    const ytdlp = createYtDlpSpawn(args, outputFolder)
+    const ytdlp = createYtDlpSpawn(args, targetFolder)
     jobs.set(id, ytdlp)
 
     let progressData = ''
@@ -294,9 +297,12 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
   return new Promise((resolve) => {
     const { id, format, quality, outputFolder } = options
 
+    const targetFolder = join(outputFolder, format === 'mp3' ? 'Audio' : 'Video')
+    if (!existsSync(targetFolder)) mkdirSync(targetFolder, { recursive: true })
+
     const args = [
       url,
-      '-o', join(outputFolder, '%(playlist_index)s - %(title)s.%(ext)s'),
+      '-o', join(targetFolder, '%(playlist_index)s - %(title)s.%(ext)s'),
       '--yes-playlist'
     ]
 
@@ -309,7 +315,7 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
 
     args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
-    const ytdlp = createYtDlpSpawn(args, outputFolder)
+    const ytdlp = createYtDlpSpawn(args, targetFolder)
     jobs.set(id, ytdlp)
 
     ytdlp.stdout.on('data', (data) => {

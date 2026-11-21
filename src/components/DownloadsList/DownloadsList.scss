@@ -3,9 +3,23 @@
 .downloads-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   flex: 1;
   overflow-y: auto;
+
+  .downloads-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 400;
+    color: $text-muted;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
 
   .download-item {
     display: flex;

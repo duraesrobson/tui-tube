@@ -23,30 +23,30 @@ data class SavedFile(
 object MediaStorage {
     private const val FOLDER = "tui-tube"
 
-    fun saveAll(context: Context, sourceDir: File): List<SavedFile> {
+    fun saveAll(context: Context, sourceDir: File, folder: String): List<SavedFile> {
         val files = sourceDir.listFiles()?.filter { it.isFile && it.length() > 0 } ?: return emptyList()
 
-        return files.mapNotNull { save(context, it) }
+        return files.mapNotNull { save(context, it, folder) }
     }
 
-    private fun save(context: Context, file: File): SavedFile? {
+    private fun save(context: Context, file: File, folder: String): SavedFile? {
         val mime = mimeFor(file.name)
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            saveWithMediaStore(context, file, mime)
+            saveWithMediaStore(context, file, mime, folder)
         } else {
-            saveLegacy(context, file, mime)
+            saveLegacy(context, file, mime, folder)
         }
     }
 
-    private fun saveWithMediaStore(context: Context, file: File, mime: String): SavedFile? {
+    private fun saveWithMediaStore(context: Context, file: File, mime: String, folder: String): SavedFile? {
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
             put(MediaStore.MediaColumns.MIME_TYPE, mime)
             put(
                 MediaStore.MediaColumns.RELATIVE_PATH,
-                "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER"
+                "${Environment.DIRECTORY_DOWNLOADS}/$FOLDER/$folder"
             )
             put(MediaStore.MediaColumns.IS_PENDING, 1)
         }
@@ -71,9 +71,12 @@ object MediaStorage {
     }
 
     @Suppress("DEPRECATION")
-    private fun saveLegacy(context: Context, file: File, mime: String): SavedFile? {
+    private fun saveLegacy(context: Context, file: File, mime: String, folder: String): SavedFile? {
         val target = File(
-            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FOLDER),
+            File(
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FOLDER),
+                folder
+            ),
             file.name
         )
 
