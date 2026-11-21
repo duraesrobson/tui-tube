@@ -2,6 +2,18 @@ import type { DownloadItem, DownloadProgressEvent } from '../types'
 
 const PERCENT_PATTERN = /(\d{1,3}(?:\.\d+)?)%/
 
+/** Tags do yt-dlp que indicam pós-processamento (ffmpeg), não download. */
+const CONVERTING_MARKERS = [
+  '[ExtractAudio]',
+  '[Merger]',
+  '[ffmpeg]',
+  '[VideoConvertor]',
+  '[FixupM3u8]',
+  '[EmbedThumbnail]',
+  '[Metadata]',
+  '[MoveFiles]'
+]
+
 /** Extrai a porcentagem de uma linha do yt-dlp, se houver. */
 export const parsePercent = (output?: string): number | null => {
   if (!output) return null
@@ -13,15 +25,34 @@ export const parsePercent = (output?: string): number | null => {
 }
 
 /**
+ * Descobre em que fase o yt-dlp está a partir da linha de saída.
+ * Usado no desktop; no Android o plugin manda o status explícito.
+ */
+export const detectPhase = (
+  output?: string
+): 'downloading' | 'converting' | null => {
+  if (!output) return null
+
+  const line = output.trim()
+
+  if (CONVERTING_MARKERS.some((marker) => line.startsWith(marker) || line.includes(marker))) {
+    return 'converting'
+  }
+
+  if (line.startsWith('[download]') && PERCENT_PATTERN.test(line)) {
+    return 'downloading'
+  }
+
+  return null
+}
+
+/**
  * Aplica um evento de progresso ao item correspondente.
- * Sem `status` explícito (desktop), o item continua em andamento: a conclusão
- * vem da promise do download, porque no MP3 o yt-dlp ainda converte o arquivo
- * depois de chegar a 100%.
+ * A conclusão vem do evento `completed` (Android) ou da promise do download
+ * (desktop), porque no MP3 o yt-dlp ainda converte depois de chegar a 100%.
  */
 export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent): DownloadItem => {
   if (item.id !== event.id) return item
-
-  const progress = typeof event.progress === 'number' ? event.progress : parsePercent(event.output)
 
   if (event.status === 'completed') {
     return { ...item, progress: 100, status: 'completed', error: undefined }
@@ -31,9 +62,25 @@ export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent):
     return { ...item, status: 'error', error: event.error || 'Falha no download' }
   }
 
+  if (event.status === 'converting') {
+    return { ...item, status: 'converting' }
+  }
+
+  // Fase detectada na própria linha (desktop) tem prioridade sobre o percentual.
+  if (detectPhase(event.output) === 'converting') {
+    return { ...item, status: 'converting' }
+  }
+
+  const progress = typeof event.progress === 'number' ? event.progress : parsePercent(event.output)
+
   if (progress === null) return item
 
-  return { ...item, progress }
+  return {
+    ...item,
+    progress,
+    // Não volta de "convertendo" para "baixando" por causa de uma linha tardia.
+    status: item.status === 'converting' ? 'converting' : 'downloading'
+  }
 }
 
 /** Atualiza todos os downloads que casarem com o evento. */

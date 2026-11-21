@@ -43,7 +43,7 @@ export interface DownloadProgressEvent {
   progress?: number
   isPlaylist?: boolean
   /** Estado final reportado pelo backend Android. */
-  status?: 'downloading' | 'completed' | 'error'
+  status?: 'downloading' | 'converting' | 'completed' | 'error'
   error?: string
 }
 

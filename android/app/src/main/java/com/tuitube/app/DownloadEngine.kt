@@ -21,6 +21,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -45,6 +46,32 @@ object DownloadEngine {
     private val activeJobs = AtomicInteger(0)
     private val processIds = ConcurrentHashMap<String, String>()
     private val jobs = ConcurrentHashMap<String, Job>()
+
+    /** Tags do yt-dlp que indicam pós-processamento (ffmpeg), não download. */
+    private val convertingMarkers = listOf(
+        "[ExtractAudio]",
+        "[Merger]",
+        "[ffmpeg]",
+        "[VideoConvertor]",
+        "[FixupM3u8]",
+        "[EmbedThumbnail]",
+        "[Metadata]",
+        "[MoveFiles]"
+    )
+
+    private fun detectPhase(line: String): String? {
+        val trimmed = line.trim()
+
+        if (convertingMarkers.any { trimmed.startsWith(it) || trimmed.contains(it) }) {
+            return "converting"
+        }
+
+        if (trimmed.startsWith("[download]") && trimmed.contains("%")) {
+            return "downloading"
+        }
+
+        return null
+    }
 
     fun hasActiveJobs(): Boolean = activeJobs.get() > 0
 
@@ -107,12 +134,20 @@ object DownloadEngine {
                 val request = buildRequest(url, format, quality, playlist, workDir)
                 val processId = UUID.randomUUID().toString()
                 processIds[id] = processId
+                val lastPhase = AtomicReference<String?>(null)
 
                 suspendCancellableCoroutine<Unit> { cont ->
                     val job = YoutubeDL.download(
                         request = request,
                         pId = processId,
-                        progressCallBack = { percent, _, _ ->
+                        progressCallBack = { percent, _, line ->
+                            val phase = detectPhase(line)
+
+                            if (phase != null && phase != lastPhase.get()) {
+                                lastPhase.set(phase)
+                                emit(DownloadEvent(id = id, url = url, status = phase))
+                            }
+
                             if (percent >= 0f) {
                                 emit(DownloadEvent(id = id, url = url, percent = percent.toDouble()))
                             }

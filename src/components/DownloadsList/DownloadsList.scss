@@ -51,7 +51,8 @@
       font-size: 11px;
       text-transform: uppercase;
 
-      &.downloading {
+      &.downloading,
+      &.converting {
         background: rgba(0, 255, 65, 0.2);
         color: $text-primary;
       }

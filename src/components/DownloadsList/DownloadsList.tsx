@@ -31,6 +31,7 @@ export const DownloadsList = ({ downloads }: DownloadsListProps) => {
           <span className={`status ${item.status}`}>
             {item.status === 'queued' && 'Aguardando'}
             {item.status === 'downloading' && 'Baixando'}
+            {item.status === 'converting' && 'Convertendo'}
             {item.status === 'completed' && 'Concluído'}
             {item.status === 'error' && 'Erro'}
           </span>

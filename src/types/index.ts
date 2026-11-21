@@ -15,7 +15,7 @@ export interface DownloadItem {
   url: string
   title: string
   format: 'mp3' | 'mp4'
-  status: 'queued' | 'downloading' | 'completed' | 'error'
+  status: 'queued' | 'downloading' | 'converting' | 'completed' | 'error'
   progress: number
   error?: string
 }

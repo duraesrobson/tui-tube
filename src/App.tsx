@@ -110,7 +110,8 @@ function App() {
   }
 
   const isDownloading = downloads.some(
-    (item) => item.status === 'downloading' || item.status === 'queued'
+    (item) =>
+      item.status === 'downloading' || item.status === 'converting' || item.status === 'queued'
   )
 
   const handleStartDownload = async () => {
@@ -165,7 +166,9 @@ function App() {
     }
   }
 
-  const currentDownload = downloads.find((d) => d.status === 'downloading')
+  const currentDownload = downloads.find(
+    (d) => d.status === 'downloading' || d.status === 'converting'
+  )
 
   return (
     <div className="container">
