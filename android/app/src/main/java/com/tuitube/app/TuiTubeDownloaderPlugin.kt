@@ -179,6 +179,57 @@ class TuiTubeDownloaderPlugin : Plugin() {
         }
     }
 
+    /** Lista os itens da playlist (índice, título e thumbnail). */
+    @PluginMethod
+    fun getPlaylistInfo(call: PluginCall) {
+        val url = call.getString("url")
+        if (url.isNullOrBlank()) {
+            call.reject("URL obrigatória")
+            return
+        }
+
+        val start = (call.getInt("start") ?: 1).coerceAtLeast(1)
+        val pageSize = (call.getInt("pageSize") ?: 10).coerceIn(1, 50)
+
+        scope.launch {
+            try {
+                val page = withContext(Dispatchers.IO) {
+                    DownloadEngine.getPlaylist(context, url, start, pageSize)
+                }
+
+                val array = JSArray()
+                page.items.forEach { item ->
+                    array.put(
+                        JSObject().apply {
+                            put("index", item.index)
+                            put("title", item.title)
+                            item.thumbnail?.let { put("thumbnail", it) }
+                            item.duration?.let { put("duration", it) }
+                            item.videoId?.let { put("videoId", it) }
+                        }
+                    )
+                }
+
+                call.resolve(
+                    JSObject().apply {
+                        put("success", true)
+                        put("items", array)
+                        put("hasMore", page.hasMore)
+                        if (page.items.isEmpty()) put("error", "Nenhum item encontrado")
+                    }
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "getPlaylistInfo falhou", e)
+                call.resolve(
+                    JSObject().apply {
+                        put("success", false)
+                        put("error", friendlyError(e))
+                    }
+                )
+            }
+        }
+    }
+
     /** Lê a área de transferência (o app está em foco quando o botão é tocado). */
     @PluginMethod
     fun readClipboard(call: PluginCall) {

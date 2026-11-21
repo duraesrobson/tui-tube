@@ -25,6 +25,10 @@ export const createWebPlatform = (): PlatformAPI => ({
   cancelDownload: async () => {},
   openFile: async () => {},
   deleteFile: async () => {},
+  getPlaylistInfo: async () => ({
+    success: false,
+    error: 'Listagem de playlist disponível apenas no app desktop ou Android.'
+  }),
   readClipboard: async () => {
     try {
       return await navigator.clipboard.readText()

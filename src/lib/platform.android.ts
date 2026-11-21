@@ -3,6 +3,7 @@ import type { PluginListenerHandle } from '@capacitor/core'
 import { normalizeVideoInfo } from './formats'
 import type {
   DownloadFormat,
+  PlaylistInfoResult,
   DownloadProgressEvent,
   DownloadResult,
   EngineUpdateResult,
@@ -20,6 +21,11 @@ interface ShareEvent {
 interface TuiTubeDownloaderPlugin {
   getVideoInfo(options: { url: string }): Promise<VideoInfoResult>
   readClipboard(): Promise<{ text: string }>
+  getPlaylistInfo(options: {
+    url: string
+    start?: number
+    pageSize?: number
+  }): Promise<PlaylistInfoResult>
   download(options: {
     id: string
     url: string
@@ -98,6 +104,12 @@ export const androidPlatform: PlatformAPI = {
       info: normalizeVideoInfo(result.info as Parameters<typeof normalizeVideoInfo>[0])
     }
   },
+  getPlaylistInfo: (url, options) =>
+    Downloader.getPlaylistInfo({
+      url,
+      start: options?.start,
+      pageSize: options?.pageSize
+    }),
   readClipboard: async () => {
     const { text } = await Downloader.readClipboard()
 

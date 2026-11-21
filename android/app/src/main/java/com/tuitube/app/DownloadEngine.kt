@@ -5,6 +5,7 @@ import android.util.Log
 import com.farimarwat.commons.UpdateChannel
 import com.farimarwat.commons.VideoInfo
 import com.farimarwat.commons.YoutubeDLRequest
+import com.farimarwat.commons.YoutubeDLResponse
 import com.farimarwat.library.YoutubeDL
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -24,6 +26,19 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+
+data class PlaylistPage(
+    val items: List<PlaylistEntry>,
+    val hasMore: Boolean
+)
+
+data class PlaylistEntry(
+    val index: Int,
+    val title: String,
+    val thumbnail: String?,
+    val duration: Int?,
+    val videoId: String?
+)
 
 data class DownloadEvent(
     val id: String,
@@ -112,6 +127,75 @@ object DownloadEngine {
             )
         }
     }
+
+    /**
+     * Lista os itens da playlist. O dump em JSON é feito pelo próprio yt-dlp;
+     * usamos o download() só como executor de processo (nada é baixado).
+     */
+    suspend fun getPlaylist(
+        context: Context,
+        url: String,
+        start: Int,
+        pageSize: Int
+    ): PlaylistPage = withContext(Dispatchers.IO) {
+            ensureInitialized(context.applicationContext)
+
+            // Pede um item a mais para saber se existe próxima página.
+            val request = YoutubeDLRequest(url)
+                .addOption("--flat-playlist")
+                .addOption("--dump-json")
+                .addOption("--skip-download")
+                .addOption("--yes-playlist")
+                .addOption("--playlist-start", start)
+                .addOption("--playlist-end", start + pageSize)
+                .addOption("--no-warnings")
+
+            val response = suspendCancellableCoroutine<YoutubeDLResponse> { cont ->
+                YoutubeDL.download(
+                    request = request,
+                    pId = null,
+                    progressCallBack = { _, _, _ -> },
+                    onStartProcess = { },
+                    onEndProcess = { result -> if (cont.isActive) cont.resume(result) },
+                    onError = { error -> if (cont.isActive) cont.resumeWithException(error) }
+                )
+            }
+
+            val parsed = parsePlaylist(response.out).dropWhile { it.index < start }
+
+            PlaylistPage(
+                items = parsed.take(pageSize),
+                hasMore = parsed.size > pageSize
+            )
+        }
+
+    private fun parsePlaylist(raw: String): List<PlaylistEntry> =
+        raw.lineSequence()
+            .filter { it.trim().startsWith("{") }
+            .mapIndexedNotNull { position, line ->
+                runCatching {
+                    val json = JSONObject(line)
+                    val videoId = json.optString("id").ifBlank { null }
+                    val thumbnails = json.optJSONArray("thumbnails")
+
+                    val thumbnail = json.optString("thumbnail").ifBlank { null }
+                        ?: thumbnails?.optJSONObject(0)?.optString("url")?.ifBlank { null }
+                        ?: videoId?.let { "https://i.ytimg.com/vi/$it/mqdefault.jpg" }
+
+                    PlaylistEntry(
+                        index = if (json.has("playlist_index")) {
+                            json.optInt("playlist_index")
+                        } else {
+                            position + 1
+                        },
+                        title = json.optString("title").ifBlank { "Sem título" },
+                        thumbnail = thumbnail,
+                        duration = if (json.has("duration")) json.optInt("duration") else null,
+                        videoId = videoId
+                    )
+                }.getOrNull()
+            }
+            .toList()
 
     fun startDownload(
         context: Context,

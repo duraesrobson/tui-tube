@@ -33,6 +33,30 @@ export interface VideoInfo {
   formats?: VideoFormat[]
 }
 
+export interface PlaylistItem {
+  /** Índice dentro da playlist (1-based), usado em --playlist-items. */
+  index: number
+  title: string
+  thumbnail?: string
+  duration?: number
+  videoId?: string
+}
+
+export interface PlaylistInfoResult {
+  success: boolean
+  items?: PlaylistItem[]
+  /** true quando ainda existem itens depois desta página. */
+  hasMore?: boolean
+  error?: string
+}
+
+export interface PlaylistPageOptions {
+  /** Índice do primeiro item da página (1-based). */
+  start?: number
+  /** Quantidade de itens por página (padrão 10). */
+  pageSize?: number
+}
+
 export interface VideoInfoResult {
   success: boolean
   info?: VideoInfo
@@ -95,6 +119,7 @@ export interface PlatformAPI {
   selectFolder(): Promise<string | null>
   getVideoInfo(url: string): Promise<VideoInfoResult>
   readClipboard(): Promise<string>
+  getPlaylistInfo(url: string, options?: PlaylistPageOptions): Promise<PlaylistInfoResult>
   downloadVideo(url: string, options: DownloadOptions): Promise<DownloadResult>
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
   cancelDownload(id: string): Promise<void>
@@ -123,6 +148,7 @@ export interface ElectronBridge {
   deleteFile(file: DownloadFile): Promise<void>
   getVideoInfo(url: string): Promise<VideoInfoResult>
   readClipboard(): Promise<string>
+  getPlaylistInfo(url: string, options?: PlaylistPageOptions): Promise<PlaylistInfoResult>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void
   windowMinimize(): Promise<void>

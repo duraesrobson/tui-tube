@@ -23,6 +23,7 @@ export const createElectronPlatform = (bridge: ElectronBridge): PlatformAPI => (
     }
   },
   readClipboard: () => bridge.readClipboard(),
+  getPlaylistInfo: (url, options) => bridge.getPlaylistInfo(url, options),
   downloadVideo: (url, options) => bridge.downloadVideo(url, options),
   downloadPlaylist: (url, options) => bridge.downloadPlaylist(url, options),
   cancelDownload: (id) => bridge.cancelDownload(id),

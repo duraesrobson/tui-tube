@@ -356,6 +356,81 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
   })
 })
 
+ipcMain.handle('get-playlist-info', async (_event, url: string, options?: {
+  start?: number
+  pageSize?: number
+}) => {
+  return new Promise((resolve) => {
+    const start = Math.max(1, options?.start ?? 1)
+    const pageSize = Math.min(50, Math.max(1, options?.pageSize ?? 10))
+    // Pede um item a mais para saber se existe próxima página.
+    const end = start + pageSize
+
+    const ytdlp = createYtDlpSpawn([
+      url,
+      '--flat-playlist',
+      '--dump-json',
+      '--skip-download',
+      '--yes-playlist',
+      '--playlist-start', String(start),
+      '--playlist-end', String(end)
+    ], process.cwd())
+
+    let data = ''
+
+    ytdlp.stdout.on('data', (chunk) => {
+      data += chunk.toString()
+    })
+
+    ytdlp.stderr.on('data', (chunk) => {
+      log.info('yt-dlp playlist stderr:', chunk.toString())
+    })
+
+    ytdlp.on('close', () => {
+      try {
+        const items = data
+          .split(/\r?\n/)
+          .filter((line) => line.trim().startsWith('{'))
+          .map((line, position) => {
+            const entry = JSON.parse(line) as {
+              id?: string
+              title?: string
+              duration?: number
+              playlist_index?: number
+              thumbnail?: string
+              thumbnails?: Array<{ url?: string }>
+            }
+            const videoId = entry.id ?? ''
+
+            return {
+              index: entry.playlist_index ?? position + 1,
+              title: entry.title ?? 'Sem título',
+              thumbnail: entry.thumbnail ?? entry.thumbnails?.[0]?.url ?? (videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : undefined),
+              duration: entry.duration,
+              videoId
+            }
+          })
+
+        const hasMore = items.length > pageSize
+
+        resolve({
+          success: true,
+          items: items.slice(0, pageSize),
+          hasMore,
+          error: items.length ? undefined : 'Nenhum item encontrado'
+        })
+      } catch (error) {
+        log.error('Falha ao listar playlist:', error)
+        resolve({ success: false, items: [], error: 'Não foi possível listar os itens' })
+      }
+    })
+
+    ytdlp.on('error', (err) => {
+      resolve({ success: false, items: [], error: err.message })
+    })
+  })
+})
+
 ipcMain.handle('get-video-info', async (_event, url: string) => {
   log.info('get-video-info called, url:', url)
   const ytDlpPath = getYtDlpPath()

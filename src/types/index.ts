@@ -9,6 +9,9 @@ export type {
   EngineUpdateResult,
   PlatformAPI,
   PlatformName,
+  PlaylistInfoResult,
+  PlaylistItem,
+  PlaylistPageOptions,
   VideoFormat,
   VideoInfo,
   VideoInfoResult
