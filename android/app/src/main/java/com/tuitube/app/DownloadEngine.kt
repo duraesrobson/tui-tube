@@ -47,6 +47,7 @@ object DownloadEngine {
     private val activeJobs = AtomicInteger(0)
     private val processIds = ConcurrentHashMap<String, String>()
     private val cancelledJobs = ConcurrentHashMap.newKeySet<String>()
+    private val jobHandles = ConcurrentHashMap<String, Job>()
     private val jobs = ConcurrentHashMap<String, Job>()
 
     /** Tags do yt-dlp que indicam pós-processamento (ffmpeg), não download. */
@@ -124,9 +125,10 @@ object DownloadEngine {
     ) {
         val appContext = context.applicationContext
         activeJobs.incrementAndGet()
+        DownloadService.clearDoneNotification(appContext)
         DownloadService.start(appContext)
 
-        scope.launch {
+        val handle = scope.launch {
             val workDir = File(appContext.cacheDir, "tui-tube/$id")
 
             try {
@@ -148,10 +150,17 @@ object DownloadEngine {
 
                             if (phase != null && phase != lastPhase.get()) {
                                 lastPhase.set(phase)
+
+                                if (phase == "converting") {
+                                    DownloadService.update(appContext, "Convertendo...")
+                                }
+
                                 emit(DownloadEvent(id = id, url = url, status = phase))
                             }
 
                             if (percent >= 0f) {
+                                val value = percent.toInt()
+                                DownloadService.update(appContext, "Baixando $value%", value)
                                 emit(DownloadEvent(id = id, url = url, percent = percent.toDouble()))
                             }
                         },
@@ -207,7 +216,16 @@ object DownloadEngine {
                     jobs[id] = job
                 }
             } catch (e: CancellationException) {
-                emit(DownloadEvent(id = id, url = url, status = "error", error = "Download cancelado"))
+                val wasCancelled = cancelledJobs.remove(id)
+
+                emit(
+                    DownloadEvent(
+                        id = id,
+                        url = url,
+                        status = if (wasCancelled) "cancelled" else "error",
+                        error = if (wasCancelled) null else "Download interrompido"
+                    )
+                )
             } catch (e: Exception) {
                 Log.e(TAG, "Falha no download", e)
                 emit(
@@ -223,11 +241,14 @@ object DownloadEngine {
                 cancelledJobs.remove(id)
                 processIds.remove(id)
                 jobs.remove(id)
+                jobHandles.remove(id)
                 if (activeJobs.decrementAndGet() <= 0) {
                     DownloadService.stop(appContext)
                 }
             }
         }
+
+        jobHandles[id] = handle
     }
 
     private suspend fun handleSuccess(
@@ -249,6 +270,13 @@ object DownloadEngine {
         }
 
         if (saved.isNotEmpty()) {
+            DownloadService.notifyDone(
+                context,
+                "Download concluído — toque para abrir",
+                saved.firstOrNull()?.uri,
+                saved.firstOrNull()?.mime
+            )
+
             emit(DownloadEvent(id = id, url = url, status = "completed", files = saved))
         } else {
             emit(DownloadEvent(id = id, url = url, status = "error", error = "Nenhum arquivo foi gerado"))
@@ -262,6 +290,8 @@ object DownloadEngine {
             cancelledJobs.add(key)
             processIds[key]?.let { pid -> runCatching { YoutubeDL.destroyProcessById(pid) } }
             jobs[key]?.cancel()
+            // Cancela a corrotina externa: garante o finally (contador + service).
+            jobHandles[key]?.cancel()
         }
     }
 
