@@ -1,4 +1,5 @@
 import type { DownloadItem, DownloadProgressEvent } from '../types'
+import { humanizeError } from './downloadErrors'
 
 const PERCENT_PATTERN = /(\d{1,3}(?:\.\d+)?)%/
 
@@ -69,7 +70,7 @@ export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent):
   }
 
   if (event.status === 'error') {
-    return { ...item, status: 'error', error: event.error || 'Falha no download' }
+    return { ...item, status: 'error', error: humanizeError(event.error) }
   }
 
   if (event.status === 'converting') {

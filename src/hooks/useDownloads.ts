@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { platform } from '../lib/platform'
 import { applyProgressToAll } from '../lib/downloadProgress'
 import { loadHistory, saveHistory } from '../lib/history'
+import { humanizeError } from '../lib/downloadErrors'
 import type { DownloadFormat, DownloadItem, DownloadOptions } from '../types'
 
 export interface StartDownloadInput {
@@ -78,7 +79,7 @@ export const useDownloads = (): UseDownloadsReturn => {
         patch(id, {
           status: result.cancelled ? 'cancelled' : result.success ? 'completed' : 'error',
           progress: result.success ? 100 : undefined,
-          error: result.error,
+          error: result.error ? humanizeError(result.error) : undefined,
           files: result.files
         })
       } catch {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { platform } from '../lib/platform'
 import { parseLink } from '../lib/youtubeUrl'
+import { humanizeError } from '../lib/downloadErrors'
 import type { VideoInfo } from '../types'
 
 interface UseVideoReturn {
@@ -35,7 +36,7 @@ export const useVideo = (url: string): UseVideoReturn => {
       if (result.success && result.info) {
         setVideoInfo(result.info)
       } else {
-        setError(result.error || 'Falha ao obter informações')
+        setError(humanizeError(result.error || 'Falha ao obter informações'))
       }
     } catch {
       setError('Erro ao conectar com o serviço')
