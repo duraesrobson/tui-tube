@@ -63,7 +63,7 @@ function App() {
 
   const {
     downloads,
-    isDownloading,
+    atCapacity,
     currentDownload,
     startDownload,
     retryDownload,
@@ -172,7 +172,7 @@ function App() {
           onChange={setUrl}
           onFetchInfo={() => fetchVideoInfo(url)}
           onPaste={handlePaste}
-          isLoading={isLoading || isDownloading}
+          isLoading={isLoading}
           disabled={!url.trim()}
         />
 
@@ -202,8 +202,8 @@ function App() {
 
         <DownloadButton
           format={format}
-          isLoading={isDownloading}
-          disabled={!url.trim() || !videoInfo}
+          isLoading={false}
+          disabled={!url.trim() || !videoInfo || atCapacity}
           onClick={handleStartDownload}
         />
       </section>

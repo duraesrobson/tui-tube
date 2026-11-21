@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { platform } from '../lib/platform'
 import { applyProgressToAll } from '../lib/downloadProgress'
 import { loadHistory, saveHistory } from '../lib/history'
@@ -15,6 +15,7 @@ interface UseDownloadsReturn {
   finishedDownloads: DownloadItem[]
   currentDownload: DownloadItem | undefined
   isDownloading: boolean
+  atCapacity: boolean
   startDownload: (input: StartDownloadInput) => Promise<void>
   retryDownload: (item: DownloadItem) => Promise<void>
   cancelDownload: (id: string) => Promise<void>
@@ -23,11 +24,16 @@ interface UseDownloadsReturn {
 }
 
 const ACTIVE_STATUSES: DownloadItem['status'][] = ['queued', 'downloading', 'converting']
+const RUNNING_STATUSES: DownloadItem['status'][] = ['downloading', 'converting']
+
+/** Quantos downloads podem rodar ao mesmo tempo. */
+const MAX_CONCURRENT = 2
 
 const isActive = (item: DownloadItem) => ACTIVE_STATUSES.includes(item.status)
 
 export const useDownloads = (): UseDownloadsReturn => {
   const [downloads, setDownloads] = useState<DownloadItem[]>(() => loadHistory())
+  const startingRef = useRef<Set<string>>(new Set())
 
   const patch = useCallback((id: string, changes: Partial<DownloadItem>) => {
     setDownloads((prev) =>
@@ -110,18 +116,18 @@ export const useDownloads = (): UseDownloadsReturn => {
         }
       ])
 
-      await runDownload(id, request)
+      // O efeito da fila inicia quando houver vaga.
     },
-    [runDownload]
+    []
   )
 
   const retryDownload = useCallback(
     async (item: DownloadItem) => {
       if (!item.request) return
 
-      await runDownload(item.id, item.request)
+      patch(item.id, { status: 'queued', progress: 0, error: undefined, files: undefined })
     },
-    [runDownload]
+    [patch]
   )
 
   const cancelDownload = useCallback(
@@ -174,6 +180,26 @@ export const useDownloads = (): UseDownloadsReturn => {
     [patch]
   )
 
+  const runningCount = downloads.filter((item) => RUNNING_STATUSES.includes(item.status)).length
+  const atCapacity = runningCount >= MAX_CONCURRENT
+
+  // Inicia o próximo da fila respeitando o limite de concorrência.
+  useEffect(() => {
+    if (runningCount >= MAX_CONCURRENT) return
+
+    const next = downloads.find(
+      (item) => item.status === 'queued' && item.request && !startingRef.current.has(item.id)
+    )
+
+    if (!next?.request) return
+
+    startingRef.current.add(next.id)
+
+    void runDownload(next.id, next.request).finally(() => {
+      startingRef.current.delete(next.id)
+    })
+  }, [downloads, runningCount, runDownload])
+
   const activeDownloads = downloads.filter(isActive)
   const finishedDownloads = downloads.filter((item) => !isActive(item))
   const currentDownload = activeDownloads[0]
@@ -185,6 +211,7 @@ export const useDownloads = (): UseDownloadsReturn => {
     finishedDownloads,
     currentDownload,
     isDownloading,
+    atCapacity,
     startDownload,
     retryDownload,
     cancelDownload,
