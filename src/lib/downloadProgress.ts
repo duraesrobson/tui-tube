@@ -55,7 +55,13 @@ export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent):
   if (item.id !== event.id) return item
 
   if (event.status === 'completed') {
-    return { ...item, progress: 100, status: 'completed', error: undefined }
+    return {
+      ...item,
+      progress: 100,
+      status: 'completed',
+      error: undefined,
+      files: event.files?.length ? event.files : item.files
+    }
   }
 
   if (event.status === 'cancelled') {

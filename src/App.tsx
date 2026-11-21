@@ -168,7 +168,8 @@ function App() {
                     ? 'completed'
                     : 'error',
                 progress: result.success ? 100 : item.progress,
-                error: result.error
+                error: result.error,
+                files: result.files
               }
             : item
         )

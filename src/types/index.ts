@@ -1,4 +1,7 @@
+import type { DownloadFile } from './platform'
+
 export type {
+  DownloadFile,
   DownloadFormat,
   DownloadOptions,
   DownloadProgressEvent,
@@ -18,6 +21,7 @@ export interface DownloadItem {
   status: 'queued' | 'downloading' | 'converting' | 'completed' | 'cancelled' | 'error'
   progress: number
   error?: string
+  files?: DownloadFile[]
 }
 
 export interface QualityOption {

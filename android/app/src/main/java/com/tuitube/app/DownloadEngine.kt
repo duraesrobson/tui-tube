@@ -30,7 +30,8 @@ data class DownloadEvent(
     val url: String,
     val percent: Double? = null,
     val status: String? = null,
-    val error: String? = null
+    val error: String? = null,
+    val files: List<SavedFile>? = null
 )
 
 /**
@@ -243,8 +244,8 @@ object DownloadEngine {
             return
         }
 
-        if (saved > 0) {
-            emit(DownloadEvent(id = id, url = url, status = "completed"))
+        if (saved.isNotEmpty()) {
+            emit(DownloadEvent(id = id, url = url, status = "completed", files = saved))
         } else {
             emit(DownloadEvent(id = id, url = url, status = "error", error = "Nenhum arquivo foi gerado"))
         }

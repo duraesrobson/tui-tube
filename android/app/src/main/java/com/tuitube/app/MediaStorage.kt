@@ -9,6 +9,13 @@ import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
 
+data class SavedFile(
+    val uri: String,
+    val name: String,
+    val mime: String,
+    val size: Long
+)
+
 /**
  * Copia os arquivos gerados pelo yt-dlp (cache privado do app) para
  * Download/tui-tube, que é acessível ao usuário sem permissões perigosas.
@@ -16,18 +23,13 @@ import java.io.File
 object MediaStorage {
     private const val FOLDER = "tui-tube"
 
-    fun saveAll(context: Context, sourceDir: File): Int {
-        val files = sourceDir.listFiles()?.filter { it.isFile && it.length() > 0 } ?: return 0
-        var saved = 0
+    fun saveAll(context: Context, sourceDir: File): List<SavedFile> {
+        val files = sourceDir.listFiles()?.filter { it.isFile && it.length() > 0 } ?: return emptyList()
 
-        for (file in files) {
-            if (save(context, file)) saved++
-        }
-
-        return saved
+        return files.mapNotNull { save(context, it) }
     }
 
-    private fun save(context: Context, file: File): Boolean {
+    private fun save(context: Context, file: File): SavedFile? {
         val mime = mimeFor(file.name)
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -37,7 +39,7 @@ object MediaStorage {
         }
     }
 
-    private fun saveWithMediaStore(context: Context, file: File, mime: String): Boolean {
+    private fun saveWithMediaStore(context: Context, file: File, mime: String): SavedFile? {
         val resolver = context.contentResolver
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, file.name)
@@ -50,7 +52,7 @@ object MediaStorage {
         }
 
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-        val uri: Uri = resolver.insert(collection, values) ?: return false
+        val uri: Uri = resolver.insert(collection, values) ?: return null
 
         return try {
             resolver.openOutputStream(uri)?.use { output ->
@@ -60,15 +62,16 @@ object MediaStorage {
             values.clear()
             values.put(MediaStore.MediaColumns.IS_PENDING, 0)
             resolver.update(uri, values, null, null)
-            true
+
+            SavedFile(uri = uri.toString(), name = file.name, mime = mime, size = file.length())
         } catch (e: Exception) {
             resolver.delete(uri, null, null)
-            false
+            null
         }
     }
 
     @Suppress("DEPRECATION")
-    private fun saveLegacy(context: Context, file: File, mime: String): Boolean {
+    private fun saveLegacy(context: Context, file: File, mime: String): SavedFile? {
         val target = File(
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), FOLDER),
             file.name
@@ -78,9 +81,15 @@ object MediaStorage {
             target.parentFile?.mkdirs()
             file.copyTo(target, overwrite = true)
             MediaScannerConnection.scanFile(context, arrayOf(target.absolutePath), arrayOf(mime), null)
-            true
+
+            SavedFile(
+                uri = Uri.fromFile(target).toString(),
+                name = target.name,
+                mime = mime,
+                size = target.length()
+            )
         } catch (e: Exception) {
-            false
+            null
         }
     }
 

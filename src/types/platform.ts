@@ -22,6 +22,14 @@ export interface VideoInfoResult {
   error?: string
 }
 
+export interface DownloadFile {
+  /** content:// no Android, caminho absoluto no desktop. */
+  uri: string
+  name: string
+  mime: string
+  size: number
+}
+
 export interface DownloadResult {
   success: boolean
   url: string
@@ -29,6 +37,8 @@ export interface DownloadResult {
   error?: string
   /** true quando o job foi interrompido pelo usuário. */
   cancelled?: boolean
+  /** Arquivos gerados (desktop resolve com eles; Android manda no evento). */
+  files?: DownloadFile[]
   /**
    * true quando o download foi apenas iniciado (Android: serviço em background).
    * A conclusão chega depois pelo evento de progresso.
@@ -47,6 +57,7 @@ export interface DownloadProgressEvent {
   /** Estado final reportado pelo backend Android. */
   status?: 'downloading' | 'converting' | 'completed' | 'cancelled' | 'error'
   error?: string
+  files?: DownloadFile[]
 }
 
 export interface EngineUpdateResult {

@@ -2,7 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron'
 import { join } from 'path'
 import { spawn, type ChildProcess } from 'child_process'
 import log from 'electron-log'
-import { existsSync, mkdirSync, unlinkSync } from 'fs'
+import { existsSync, mkdirSync, statSync, unlinkSync } from 'fs'
+import { basename } from 'path'
 
 log.initialize()
 log.info('tui-tube starting...')
@@ -23,6 +24,58 @@ const jobs = new Map<string, ChildProcess>()
 const cancelledJobs = new Set<string>()
 /** Arquivos .part de cada job, usados na limpeza ao cancelar. */
 const jobPartials = new Map<string, Set<string>>()
+/** Caminhos finais anunciados pelo yt-dlp (--print after_move). */
+const jobFiles = new Map<string, Set<string>>()
+
+const FILE_PREFIX = 'tuitube-file:'
+
+type OutputFile = { uri: string; name: string; mime: string; size: number }
+
+const mimeFor = (path: string): string => {
+  const ext = path.split('.').pop()?.toLowerCase() ?? ''
+
+  switch (ext) {
+    case 'mp3': return 'audio/mpeg'
+    case 'm4a':
+    case 'aac': return 'audio/mp4'
+    case 'opus':
+    case 'ogg': return 'audio/ogg'
+    case 'wav': return 'audio/wav'
+    case 'flac': return 'audio/flac'
+    case 'mp4': return 'video/mp4'
+    case 'webm': return 'video/webm'
+    case 'mkv': return 'video/x-matroska'
+    default: return 'application/octet-stream'
+  }
+}
+
+const collectFilePaths = (id: string, chunk: string) => {
+  const paths = jobFiles.get(id) ?? new Set<string>()
+
+  for (const line of chunk.split(/\r?\n/)) {
+    const index = line.indexOf(FILE_PREFIX)
+    if (index < 0) continue
+
+    const path = line.slice(index + FILE_PREFIX.length).trim()
+    if (path) paths.add(path)
+  }
+
+  jobFiles.set(id, paths)
+}
+
+const buildFiles = (id: string): OutputFile[] => {
+  const paths = jobFiles.get(id)
+  if (!paths) return []
+
+  return [...paths].flatMap((path) => {
+    try {
+      const stats = statSync(path)
+      return [{ uri: path, name: basename(path), mime: mimeFor(path), size: stats.size }]
+    } catch {
+      return []
+    }
+  })
+}
 
 const killProcess = (child: ChildProcess) => {
   if (!child.pid) return
@@ -186,7 +239,7 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
       args.push('-f', `${formatArg}/best`)
     }
 
-    args.push('--progress')
+    args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
     const ytdlp = createYtDlpSpawn(args, outputFolder)
     jobs.set(id, ytdlp)
@@ -197,6 +250,7 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
       const chunk = data.toString()
       progressData += chunk
       trackDestination(id, chunk)
+      collectFilePaths(id, chunk)
       mainWindow?.webContents.send('download-progress', {
         id,
         url,
@@ -215,13 +269,17 @@ ipcMain.handle('download-video', async (_event, url: string, options: {
       const cancelled = cancelledJobs.delete(id)
       if (cancelled) cleanupPartials(id)
 
-      resolve({ success: code === 0 && !cancelled, url, id, cancelled })
+      const files = code === 0 && !cancelled ? buildFiles(id) : []
+      jobFiles.delete(id)
+
+      resolve({ success: code === 0 && !cancelled, url, id, cancelled, files })
     })
 
     ytdlp.on('error', (err) => {
       log.error('yt-dlp error:', err)
       jobs.delete(id)
       cancelledJobs.delete(id)
+      jobFiles.delete(id)
       resolve({ success: false, url, id, error: err.message })
     })
   })
@@ -249,7 +307,7 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
       args.push('-f', `${formatArg}/best`)
     }
 
-    args.push('--progress')
+    args.push('--progress', '--print', `after_move:${FILE_PREFIX}%(filepath)s`)
 
     const ytdlp = createYtDlpSpawn(args, outputFolder)
     jobs.set(id, ytdlp)
@@ -257,6 +315,7 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
     ytdlp.stdout.on('data', (data) => {
       const chunk = data.toString()
       trackDestination(id, chunk)
+      collectFilePaths(id, chunk)
       mainWindow?.webContents.send('download-progress', {
         id,
         url,
@@ -271,12 +330,16 @@ ipcMain.handle('download-playlist', async (_event, url: string, options: {
       const cancelled = cancelledJobs.delete(id)
       if (cancelled) cleanupPartials(id)
 
-      resolve({ success: code === 0 && !cancelled, url, id, cancelled })
+      const files = code === 0 && !cancelled ? buildFiles(id) : []
+      jobFiles.delete(id)
+
+      resolve({ success: code === 0 && !cancelled, url, id, cancelled, files })
     })
 
     ytdlp.on('error', (err) => {
       jobs.delete(id)
       cancelledJobs.delete(id)
+      jobFiles.delete(id)
       resolve({ success: false, url, id, error: err.message })
     })
   })

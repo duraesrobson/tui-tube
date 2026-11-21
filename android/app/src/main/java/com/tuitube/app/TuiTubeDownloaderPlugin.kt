@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import com.getcapacitor.JSArray
 import com.getcapacitor.JSObject
 import com.getcapacitor.PermissionState
 import com.getcapacitor.Plugin
@@ -212,6 +213,7 @@ class TuiTubeDownloaderPlugin : Plugin() {
             event.percent?.let { put("progress", it) }
             event.status?.let { put("status", it) }
             event.error?.let { put("error", it) }
+            event.files?.let { put("files", filesToJson(it)) }
         }
 
         val send = {
@@ -229,6 +231,23 @@ class TuiTubeDownloaderPlugin : Plugin() {
         } else {
             send()
         }
+    }
+
+    private fun filesToJson(files: List<SavedFile>): JSArray {
+        val array = JSArray()
+
+        files.forEach { file ->
+            array.put(
+                JSObject().apply {
+                    put("uri", file.uri)
+                    put("name", file.name)
+                    put("mime", file.mime)
+                    put("size", file.size)
+                }
+            )
+        }
+
+        return array
     }
 
     private fun friendlyError(error: Throwable): String {
