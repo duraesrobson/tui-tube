@@ -77,21 +77,28 @@ export const applyProgress = (item: DownloadItem, event: DownloadProgressEvent):
     return { ...item, status: 'converting' }
   }
 
+  // Status explícito voltando para download (ex.: próximo item da playlist).
+  if (event.status === 'downloading') {
+    return { ...item, status: 'downloading' }
+  }
+
   // Fase detectada na própria linha (desktop) tem prioridade sobre o percentual.
-  if (detectPhase(event.output) === 'converting') {
+  const phase = detectPhase(event.output)
+
+  if (phase === 'converting') {
     return { ...item, status: 'converting' }
   }
 
   const progress = typeof event.progress === 'number' ? event.progress : parsePercent(event.output)
 
-  if (progress === null) return item
-
-  return {
-    ...item,
-    progress,
-    // Não volta de "convertendo" para "baixando" por causa de uma linha tardia.
-    status: item.status === 'converting' ? 'converting' : 'downloading'
+  if (progress === null) {
+    // Linha de download sem percentual: só corrige a fase, se estava convertendo.
+    return phase === 'downloading' && item.status === 'converting'
+      ? { ...item, status: 'downloading' }
+      : item
   }
+
+  return { ...item, progress, status: 'downloading' }
 }
 
 /** Atualiza todos os downloads que casarem com o evento. */
