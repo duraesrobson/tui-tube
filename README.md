@@ -20,7 +20,7 @@
 |---|---|
 | 🎵 **MP3** | Extração de áudio de 96 kbps até 320 kbps (ou "Melhor") |
 | 🎬 **MP4** | Qualidades reais do vídeo (até 4K/60fps quando disponível), com merge no aparelho |
-| 📚 **Playlists** | Lista os itens com thumbnail, 10 por vez; marque só os que quiser baixar |
+| 📚 **Playlists** | Lista os itens com thumbnail, 10 por vez; cada item vira um download separado |
 | 🔎 **Prévia** | Busca thumbnail, título, canal, duração e a lista real de formatos |
 | 📂 **Destino** | Separado por tipo: `Audio/` e `Video/` (desktop: dentro da pasta escolhida; Android: `Download/tui-tube`) |
 | 📤 **Compartilhar** | No Android, aparece no menu "Compartilhar" do YouTube e abre com o link |

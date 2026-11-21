@@ -81,7 +81,10 @@ bin/
   fica em `queued` e é iniciado por um efeito quando abre vaga.
 - Playlist: `usePlaylist` busca páginas de 10 (`getPlaylistInfo` com start/pageSize,
   `--playlist-start/--playlist-end`); `hasMore` controla o botão "Carregar mais".
-  Nenhum item marcado = playlist inteira (`--playlist-items` vazio).
+  Na hora de baixar, cada item vira um job próprio (URL `watch?v=<videoId>`), então
+  o app nunca enfileira um job de playlist inteira no fluxo normal.
+- Notificação: o percentual é a média dos downloads ativos, para não oscilar
+  entre jobs concorrentes.
 - Notificação do Android: progresso com throttle de 800ms, ação "Cancelar"
   (`DownloadActionReceiver`) e notificação de conclusão em canal separado.
 - Cancelar precisa cancelar a corrotina externa (`jobHandles`), senão o
