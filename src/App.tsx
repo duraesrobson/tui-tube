@@ -87,9 +87,16 @@ function App() {
     }
   }, [])
 
+  // Assinatura curta: evita gravar localStorage a cada evento de progresso.
+  const historySignature = downloads
+    .filter((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'error')
+    .map((item) => `${item.id}:${item.status}`)
+    .join('|')
+
   useEffect(() => {
     saveHistory(downloads)
-  }, [downloads])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historySignature])
 
   useEffect(() => {
     const unsubscribe = platform.onDownloadProgress((event) => {
