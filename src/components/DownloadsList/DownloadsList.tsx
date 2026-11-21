@@ -5,6 +5,7 @@ interface DownloadsListProps {
   downloads: DownloadItem[]
   onCancel: (id: string) => void
   onOpen: (item: DownloadItem) => void
+  onRemove: (item: DownloadItem) => void
 }
 
 const isActive = (status: DownloadItem['status']) =>
@@ -13,7 +14,12 @@ const isActive = (status: DownloadItem['status']) =>
 const canOpen = (item: DownloadItem) =>
   item.status === 'completed' && (item.files?.length ?? 0) > 0
 
-export const DownloadsList = ({ downloads, onCancel, onOpen }: DownloadsListProps) => {
+export const DownloadsList = ({
+  downloads,
+  onCancel,
+  onOpen,
+  onRemove
+}: DownloadsListProps) => {
   if (downloads.length === 0) {
     return (
       <section className="downloads-list">
@@ -74,6 +80,18 @@ export const DownloadsList = ({ downloads, onCancel, onOpen }: DownloadsListProp
                 }}
               >
                 Cancelar
+              </button>
+            )}
+            {!isActive(item.status) && (
+              <button
+                type="button"
+                className="item-action remove"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  onRemove(item)
+                }}
+              >
+                Remover
               </button>
             )}
           </div>

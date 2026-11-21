@@ -125,6 +125,32 @@ function App() {
     }
   }
 
+  const handleRemoveDownload = async (item: DownloadItem) => {
+    const files = item.files ?? []
+
+    if (files.length > 0) {
+      const confirmed = window.confirm(`Remover "${item.title}" do dispositivo?`)
+      if (!confirmed) return
+
+      try {
+        for (const file of files) {
+          await platform.deleteFile(file)
+        }
+      } catch {
+        setDownloads((prev) =>
+          prev.map((current) =>
+            current.id === item.id
+              ? { ...current, error: 'Não foi possível remover o arquivo' }
+              : current
+          )
+        )
+        return
+      }
+    }
+
+    setDownloads((prev) => prev.filter((current) => current.id !== item.id))
+  }
+
   const handleSelectFolder = async () => {
     if (!platform.canSelectFolder) return
 
@@ -260,6 +286,7 @@ function App() {
         downloads={downloads}
         onCancel={handleCancelDownload}
         onOpen={handleOpenFile}
+        onRemove={handleRemoveDownload}
       />
 
       {platform.supportsEngineUpdate && <EngineUpdate />}

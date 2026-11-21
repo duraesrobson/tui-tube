@@ -187,6 +187,27 @@ class TuiTubeDownloaderPlugin : Plugin() {
         }
     }
 
+    /** Apaga o arquivo publicado (idempotente: sumiu = sucesso). */
+    @PluginMethod
+    fun deleteFile(call: PluginCall) {
+        val uri = call.getString("uri")
+        if (uri.isNullOrBlank()) {
+            call.reject("Arquivo inválido")
+            return
+        }
+
+        try {
+            context.contentResolver.delete(Uri.parse(uri), null, null)
+            call.resolve()
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Sem permissão para apagar $uri", e)
+            call.reject("O Android precisa confirmar a remoção deste arquivo")
+        } catch (e: Exception) {
+            Log.e(TAG, "Falha ao remover arquivo", e)
+            call.reject(e.message ?: "Não foi possível remover o arquivo")
+        }
+    }
+
     @PluginMethod
     fun openDownloads(call: PluginCall) {
         try {

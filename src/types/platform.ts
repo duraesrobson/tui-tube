@@ -81,6 +81,7 @@ export interface PlatformAPI {
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
   cancelDownload(id: string): Promise<void>
   openFile(file: DownloadFile): Promise<void>
+  deleteFile(file: DownloadFile): Promise<void>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void
   updateEngine?(): Promise<EngineUpdateResult>
@@ -101,6 +102,7 @@ export interface ElectronBridge {
   downloadPlaylist(url: string, options: DownloadOptions): Promise<DownloadResult>
   cancelDownload(id: string): Promise<void>
   openFile(file: DownloadFile): Promise<void>
+  deleteFile(file: DownloadFile): Promise<void>
   getVideoInfo(url: string): Promise<VideoInfoResult>
   openFolder(path: string): Promise<void>
   onDownloadProgress(callback: (event: DownloadProgressEvent) => void): () => void

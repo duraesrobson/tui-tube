@@ -397,6 +397,13 @@ ipcMain.handle('open-file', async (_event, path: string) => {
   if (error) throw new Error(error)
 })
 
+ipcMain.handle('delete-file', async (_event, path: string) => {
+  // Idempotente: arquivo já removido por fora não vira erro na UI.
+  if (!existsSync(path)) return
+
+  unlinkSync(path)
+})
+
 ipcMain.handle('open-folder', (_event, path: string) => {
   shell.openPath(path)
 })

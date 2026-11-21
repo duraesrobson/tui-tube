@@ -27,6 +27,7 @@ interface TuiTubeDownloaderPlugin {
   }): Promise<DownloadResult>
   cancel(options?: { id?: string }): Promise<void>
   openFile(options: { uri: string; mime: string }): Promise<void>
+  deleteFile(options: { uri: string }): Promise<void>
   updateEngine(): Promise<EngineUpdateResult>
   openDownloads(): Promise<void>
   getSharedLink(): Promise<{ url: string }>
@@ -106,6 +107,7 @@ export const androidPlatform: PlatformAPI = {
     await Downloader.cancel({ id })
   },
   openFile: (file) => Downloader.openFile({ uri: file.uri, mime: file.mime }),
+  deleteFile: (file) => Downloader.deleteFile({ uri: file.uri }),
   openFolder: () => Downloader.openDownloads(),
   onDownloadProgress: (callback) => subscribe<DownloadProgressEvent>('downloadProgress', callback),
   updateEngine: () => Downloader.updateEngine(),
