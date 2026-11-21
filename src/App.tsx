@@ -14,10 +14,9 @@ import {
   EngineUpdate
 } from './components'
 import { useVideo } from './hooks/useVideo'
+import { useDownloads } from './hooks/useDownloads'
 import { platform } from './lib/platform'
-import { applyProgressToAll } from './lib/downloadProgress'
-import { loadHistory, saveHistory } from './lib/history'
-import type { DownloadItem, QualityMap } from './types'
+import type { QualityMap } from './types'
 
 const qualities: QualityMap = {
   mp3: [
@@ -43,9 +42,18 @@ function App() {
   const [quality, setQuality] = useState('0')
   const [outputFolder, setOutputFolder] = useState('')
   const [downloadPlaylist, setDownloadPlaylist] = useState(false)
-  const [downloads, setDownloads] = useState<DownloadItem[]>(() => loadHistory())
 
   const { videoInfo, isLoading, error, fetchVideoInfo } = useVideo(url)
+
+  const {
+    downloads,
+    isDownloading,
+    currentDownload,
+    startDownload,
+    cancelDownload,
+    openDownload,
+    removeDownload
+  } = useDownloads()
 
   useEffect(() => {
     let active = true
@@ -87,82 +95,6 @@ function App() {
     }
   }, [])
 
-  // Assinatura curta: evita gravar localStorage a cada evento de progresso.
-  const historySignature = downloads
-    .filter((item) => item.status === 'completed' || item.status === 'cancelled' || item.status === 'error')
-    .map((item) => `${item.id}:${item.status}`)
-    .join('|')
-
-  useEffect(() => {
-    saveHistory(downloads)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [historySignature])
-
-  useEffect(() => {
-    const unsubscribe = platform.onDownloadProgress((event) => {
-      setDownloads((prev) => applyProgressToAll(prev, event))
-    })
-
-    return unsubscribe
-  }, [])
-
-  const handleCancelDownload = async (id: string) => {
-    setDownloads((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, status: 'cancelled', error: undefined } : item
-      )
-    )
-
-    try {
-      await platform.cancelDownload(id)
-    } catch {
-      // O item já foi marcado; se algo falhar, a UI segue consistente.
-    }
-  }
-
-  const handleOpenFile = async (item: DownloadItem) => {
-    const file = item.files?.[0]
-    if (!file) return
-
-    try {
-      await platform.openFile(file)
-    } catch {
-      setDownloads((prev) =>
-        prev.map((current) =>
-          current.id === item.id
-            ? { ...current, error: 'Não foi possível abrir o arquivo' }
-            : current
-        )
-      )
-    }
-  }
-
-  const handleRemoveDownload = async (item: DownloadItem) => {
-    const files = item.files ?? []
-
-    if (files.length > 0) {
-      const confirmed = window.confirm(`Remover "${item.title}" do dispositivo?`)
-      if (!confirmed) return
-
-      try {
-        for (const file of files) {
-          await platform.deleteFile(file)
-        }
-      } catch {
-        setDownloads((prev) =>
-          prev.map((current) =>
-            current.id === item.id
-              ? { ...current, error: 'Não foi possível remover o arquivo' }
-              : current
-          )
-        )
-        return
-      }
-    }
-
-    setDownloads((prev) => prev.filter((current) => current.id !== item.id))
-  }
-
   const handleSelectFolder = async () => {
     if (!platform.canSelectFolder) return
 
@@ -178,71 +110,18 @@ function App() {
     }
   }
 
-  const isDownloading = downloads.some(
-    (item) =>
-      item.status === 'downloading' || item.status === 'converting' || item.status === 'queued'
-  )
-
-  const handleStartDownload = async () => {
+  const handleStartDownload = () => {
     if (!url.trim() || !videoInfo) return
 
-    const id = crypto.randomUUID()
-    const title = videoInfo.title || 'Video'
-
-    const newItem: DownloadItem = {
-      id,
+    void startDownload({
       url,
-      title,
+      title: videoInfo.title || 'Video',
       format,
-      status: 'queued',
-      progress: 0
-    }
-
-    setDownloads((prev) => [...prev, newItem])
-
-    try {
-      setDownloads((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, status: 'downloading' } : item))
-      )
-
-      const options = { id, format, quality, outputFolder }
-      const downloadFn = downloadPlaylist ? platform.downloadPlaylist : platform.downloadVideo
-      const result = await downloadFn(url, options)
-
-      // Android inicia o job em background: a conclusão chega pelo evento de progresso.
-      if (result.started) return
-
-      setDownloads((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                status: result.cancelled
-                  ? 'cancelled'
-                  : result.success
-                    ? 'completed'
-                    : 'error',
-                progress: result.success ? 100 : item.progress,
-                error: result.error,
-                files: result.files
-              }
-            : item
-        )
-      )
-    } catch {
-      setDownloads((prev) =>
-        prev.map((item) =>
-          item.id === id
-            ? { ...item, status: 'error', error: 'Erro ao iniciar o download' }
-            : item
-        )
-      )
-    }
+      quality,
+      outputFolder,
+      playlist: downloadPlaylist
+    })
   }
-
-  const currentDownload = downloads.find(
-    (d) => d.status === 'downloading' || d.status === 'converting'
-  )
 
   return (
     <div className="container">
@@ -296,9 +175,9 @@ function App() {
 
       <DownloadsList
         downloads={downloads}
-        onCancel={handleCancelDownload}
-        onOpen={handleOpenFile}
-        onRemove={handleRemoveDownload}
+        onCancel={cancelDownload}
+        onOpen={openDownload}
+        onRemove={removeDownload}
       />
 
       {platform.supportsEngineUpdate && <EngineUpdate />}
