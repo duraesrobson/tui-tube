@@ -14,6 +14,7 @@ const RULES: Array<[RegExp, string]> = [
     'Vídeo indisponível ou removido.'
   ],
   [/members.?only|join this channel/i, 'Conteúdo exclusivo para membros do canal.'],
+  [/playlist type is unviewable|this playlist type/i, 'Esse tipo de playlist (mix/rádio) não é suportado. Baixe o vídeo individualmente.'],
   [/playlist does not exist|does not exist|http error 404/i, 'Playlist ou vídeo não encontrado.'],
   [/requested format is not available|no video formats found/i, 'Formato não disponível para este vídeo.'],
   [/no space left|enospc/i, 'Sem espaço no dispositivo.'],

@@ -1,4 +1,4 @@
-export type ParsedLinkKind = 'video' | 'playlist'
+export type ParsedLinkKind = 'video' | 'playlist' | 'mix'
 
 export interface ParsedLink {
   url: string
@@ -6,6 +6,9 @@ export interface ParsedLink {
   videoId?: string
   playlistId?: string
 }
+
+/** Mix/rádio automático (list=RD...): o yt-dlp não consegue abrir. */
+const isMix = (listId?: string): boolean => Boolean(listId && /^RD/i.test(listId))
 
 const YOUTUBE_HOSTS = new Set([
   'youtube.com',
@@ -71,12 +74,27 @@ export const parseLink = (input: string): ParsedLink | null => {
   if (videoId) {
     const canonical = new URL('https://www.youtube.com/watch')
     canonical.searchParams.set('v', videoId)
-    if (list) canonical.searchParams.set('list', list)
 
-    return { url: canonical.toString(), kind: 'video', videoId, playlistId: list }
+    // Mix não é baixável como playlist; mantém só o vídeo.
+    if (list && !isMix(list)) canonical.searchParams.set('list', list)
+
+    return {
+      url: canonical.toString(),
+      kind: 'video',
+      videoId,
+      playlistId: list && !isMix(list) ? list : undefined
+    }
   }
 
   if (list) {
+    if (isMix(list)) {
+      return {
+        url: `https://www.youtube.com/playlist?list=${list}`,
+        kind: 'mix',
+        playlistId: list
+      }
+    }
+
     return {
       url: `https://www.youtube.com/playlist?list=${list}`,
       kind: 'playlist',

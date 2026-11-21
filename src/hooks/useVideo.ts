@@ -27,6 +27,14 @@ export const useVideo = (url: string): UseVideoReturn => {
       return
     }
 
+    if (parsed.kind === 'mix') {
+      setVideoInfo(null)
+      setError(
+        'Mix/rádio do YouTube não pode ser baixado como playlist. Abra um vídeo do mix e use o link dele.'
+      )
+      return
+    }
+
     setIsLoading(true)
     setError(null)
     setVideoInfo(null)

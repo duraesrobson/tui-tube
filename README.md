@@ -161,6 +161,7 @@ bin/yt-dlp                 # Binário do desktop
 - **APK ~31 MB** — Python + ffmpeg (variante *lite*) embarcados. Merge e extração de áudio funcionam; só o re-encode de vídeo fica limitado ao mpeg4, que o app não usa.
 - **YouTube e JS runtime** — o yt-dlp atual usa um runtime JS (Deno) para extração completa; ele não é embarcado, então alguns vídeos podem oferecer menos formatos. O botão **Atualizar** resolve a maioria dos casos de extractor desatualizado.
 - **1080p** exige merge no aparelho, o que é mais lento e consome mais bateria que baixar um arquivo pronto.
+- **Mix/rádio (`list=RD...`)** não é suportado pelo yt-dlp: o app avisa e sugere baixar o vídeo individualmente.
 - **Remover no Android 10** pode abrir um diálogo de confirmação do sistema (política de scoped storage).
 - **Abrir** depende de existir um app instalado que aceite `audio/mpeg` ou `video/mp4`; sem player, o card mostra o erro.
 
