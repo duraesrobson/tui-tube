@@ -19,18 +19,21 @@
 | | |
 |---|---|
 | 🎵 **MP3** | Extração de áudio de 96 kbps até 320 kbps (ou "Melhor") |
-| 🎬 **MP4** | Vídeo até 1080p, com merge de vídeo + áudio no próprio aparelho |
-| 📚 **Playlists** | Baixa a playlist inteira com prefixo de índice no nome |
-| 🔎 **Prévia** | Busca título, canal e duração antes de baixar |
+| 🎬 **MP4** | Qualidades reais do vídeo (até 4K/60fps quando disponível), com merge no aparelho |
+| 📚 **Playlists** | Playlist inteira ou itens escolhidos (`1-5, 8`) com prefixo de índice |
+| 🔎 **Prévia** | Busca título, canal, duração e a lista real de formatos |
 | 📂 **Destino** | Separado por tipo: `Audio/` e `Video/` (desktop: dentro da pasta escolhida; Android: `Download/tui-tube`) |
 | 📤 **Compartilhar** | No Android, aparece no menu "Compartilhar" do YouTube e abre com o link |
-| ⏱️ **Background** | No Android o download continua com a tela apagada (foreground service) |
+| ⏱️ **Background** | No Android o download continua com a tela apagada, com progresso e cancelar na notificação |
 | ⏹️ **Cancelar** | Interrompe o download em andamento e descarta o parcial |
 | ▶️ **Abrir / ouvir** | Toque no item concluído e escolha o app (player, VLC, galeria) |
 | 🗑️ **Remover** | Apaga o arquivo do dispositivo e o item da lista, com confirmação |
+| 🧵 **Fila** | Até dois downloads simultâneos; o resto espera na fila |
+| ♻️ **Tentar de novo** | Repete um download que falhou sem pedir tudo outra vez |
+| 📋 **Colar** | Lê o link da área de transferência e normaliza (`youtu.be`, shorts, music) |
 | 🔄 **Motor atualizável** | Botão para atualizar o `yt-dlp` sem reinstalar o app |
 
-O progresso mostra a fase real: **baixando → convertendo → pronto**. A lista separa *Em andamento* de *Concluídos*, e o histórico sobrevive a fechar o app.
+O progresso mostra a fase real: **baixando → convertendo → pronto**. A lista separa *Em andamento* de *Concluídos*, o histórico sobrevive a fechar o app e a fila aceita dois downloads ao mesmo tempo.
 
 Interface em JetBrains Mono, paleta verde-fósforo — e a fonte vai **embarcada** (funciona offline).
 
@@ -129,6 +132,9 @@ src/
   App.tsx                  # Tela principal
   lib/platform*.ts         # Contrato PlatformAPI e implementações
   lib/downloadProgress.ts  # Fases e progresso compartilhados
+  lib/downloadErrors.ts    # Tradução dos erros do yt-dlp
+  lib/formats.ts           # Normalização das qualidades reais
+  lib/youtubeUrl.ts        # Parse/normalização de links
   lib/history.ts           # Histórico persistido (localStorage)
   hooks/                   # useVideo, useDownloads
   components/              # Header, UrlInput, OptionsGrid, DownloadsList...
@@ -152,7 +158,7 @@ bin/yt-dlp                 # Binário do desktop
 ## Limitações conhecidas
 
 - **APK só `arm64-v8a`** — cobre praticamente todo celular moderno, mas não roda em emulador x86_64.
-- **APK ~61 MB** — Python + ffmpeg embarcados. Existe a variante `youtubedl-boom-lite` com ffmpeg reduzido (~7 MB) se o tamanho incomodar.
+- **APK ~31 MB** — Python + ffmpeg (variante *lite*) embarcados. Merge e extração de áudio funcionam; só o re-encode de vídeo fica limitado ao mpeg4, que o app não usa.
 - **YouTube e JS runtime** — o yt-dlp atual usa um runtime JS (Deno) para extração completa; ele não é embarcado, então alguns vídeos podem oferecer menos formatos. O botão **Atualizar** resolve a maioria dos casos de extractor desatualizado.
 - **1080p** exige merge no aparelho, o que é mais lento e consome mais bateria que baixar um arquivo pronto.
 - **Remover no Android 10** pode abrir um diálogo de confirmação do sistema (política de scoped storage).

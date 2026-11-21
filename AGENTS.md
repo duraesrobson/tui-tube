@@ -66,6 +66,8 @@ bin/
 ## Android
 
 - APK somente `arm64-v8a` (`ndk.abiFilters`) — o motor embarca Python + ffmpeg (~50 MB).
+- Motor: `youtubedl-boom-lite` (ffmpeg reduzido) — o APK fica em ~31 MB. A API é
+  idêntica à `youtubedl-boom`; só o re-encode de vídeo é limitado a mpeg4.
 - `useLegacyPackaging = true` + `android:extractNativeLibs="true"` são obrigatórios:
   Android 10+ só permite executar binários de `nativeLibraryDir`.
 - Downloads vão para `Download/tui-tube/Audio` ou `/Video` via MediaStore; o yt-dlp
@@ -75,6 +77,12 @@ bin/
 - Abrir/remover no Android usam a content URI do MediaStore (`ACTION_VIEW` e
   `ContentResolver.delete`). Cancelar mantém o processo do ffmpeg no mesmo kill.
 - Histórico de itens encerrados fica em `localStorage` (`tui-tube.history.v1`).
+- Fila no renderer (`useDownloads`): no máximo 2 downloads simultâneos; o resto
+  fica em `queued` e é iniciado por um efeito quando abre vaga.
+- Notificação do Android: progresso com throttle de 800ms, ação "Cancelar"
+  (`DownloadActionReceiver`) e notificação de conclusão em canal separado.
+- Cancelar precisa cancelar a corrotina externa (`jobHandles`), senão o
+  `finally` não roda e o foreground service fica preso.
 - Assinatura: `android/keystore/release.keystore` + `android/keystore.properties`
   (ambos ignorados pelo git).
 - Build local exige JDK 21 (Capacitor 8) e Android SDK 36. `android/gradle.properties`
