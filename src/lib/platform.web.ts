@@ -23,6 +23,7 @@ export const createWebPlatform = (): PlatformAPI => ({
   downloadVideo: async (url, options) => ({ ...unsupported, url, id: options.id }),
   downloadPlaylist: async (url, options) => ({ ...unsupported, url, id: options.id }),
   cancelDownload: async () => {},
+  openFile: async () => {},
   openFolder: async () => {},
   onDownloadProgress: () => () => {},
   windowMinimize: async () => {},

@@ -108,6 +108,23 @@ function App() {
     }
   }
 
+  const handleOpenFile = async (item: DownloadItem) => {
+    const file = item.files?.[0]
+    if (!file) return
+
+    try {
+      await platform.openFile(file)
+    } catch {
+      setDownloads((prev) =>
+        prev.map((current) =>
+          current.id === item.id
+            ? { ...current, error: 'Não foi possível abrir o arquivo' }
+            : current
+        )
+      )
+    }
+  }
+
   const handleSelectFolder = async () => {
     if (!platform.canSelectFolder) return
 
@@ -239,7 +256,11 @@ function App() {
         <DownloadProgress download={currentDownload} />
       )}
 
-      <DownloadsList downloads={downloads} onCancel={handleCancelDownload} />
+      <DownloadsList
+        downloads={downloads}
+        onCancel={handleCancelDownload}
+        onOpen={handleOpenFile}
+      />
 
       {platform.supportsEngineUpdate && <EngineUpdate />}
     </div>

@@ -1,7 +1,9 @@
 package com.tuitube.app
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import com.getcapacitor.JSArray
@@ -151,6 +153,37 @@ class TuiTubeDownloaderPlugin : Plugin() {
                     }
                 )
             }
+        }
+    }
+
+    /** Abre o arquivo no app padrão do usuário (player, visualizador...). */
+    @PluginMethod
+    fun openFile(call: PluginCall) {
+        val uri = call.getString("uri")
+        if (uri.isNullOrBlank()) {
+            call.reject("Arquivo inválido")
+            return
+        }
+
+        val mime = call.getString("mime") ?: "*/*"
+
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(Uri.parse(uri), mime)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            val chooser = Intent.createChooser(intent, "Abrir com").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            context.startActivity(chooser)
+            call.resolve()
+        } catch (e: ActivityNotFoundException) {
+            call.reject("Nenhum app instalado consegue abrir este arquivo")
+        } catch (e: Exception) {
+            Log.e(TAG, "Falha ao abrir arquivo", e)
+            call.reject(e.message ?: "Não foi possível abrir o arquivo")
         }
     }
 

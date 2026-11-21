@@ -15,6 +15,7 @@ export const createElectronPlatform = (bridge: ElectronBridge): PlatformAPI => (
   downloadVideo: (url, options) => bridge.downloadVideo(url, options),
   downloadPlaylist: (url, options) => bridge.downloadPlaylist(url, options),
   cancelDownload: (id) => bridge.cancelDownload(id),
+  openFile: (file) => bridge.openFile(file),
   openFolder: (path) => bridge.openFolder(path),
   onDownloadProgress: (callback) => bridge.onDownloadProgress(callback),
   windowMinimize: () => bridge.windowMinimize(),

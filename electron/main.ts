@@ -392,6 +392,11 @@ ipcMain.handle('cancel-download', (_event, id: string) => {
   return true
 })
 
+ipcMain.handle('open-file', async (_event, path: string) => {
+  const error = await shell.openPath(path)
+  if (error) throw new Error(error)
+})
+
 ipcMain.handle('open-folder', (_event, path: string) => {
   shell.openPath(path)
 })
