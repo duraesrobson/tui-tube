@@ -63,6 +63,7 @@ object DownloadEngine {
     private val processIds = ConcurrentHashMap<String, String>()
     private val cancelledJobs = ConcurrentHashMap.newKeySet<String>()
     private val jobHandles = ConcurrentHashMap<String, Job>()
+    private val progressById = ConcurrentHashMap<String, Int>()
     private val jobs = ConcurrentHashMap<String, Job>()
 
     /** Tags do yt-dlp que indicam pós-processamento (ffmpeg), não download. */
@@ -76,6 +77,22 @@ object DownloadEngine {
         "[Metadata]",
         "[MoveFiles]"
     )
+
+    /** Agrega o progresso dos downloads ativos, evitando saltos 0->100->0. */
+    private fun updateNotificationProgress(context: Context) {
+        val values = progressById.values
+
+        if (values.isEmpty()) return
+
+        val average = values.average().toInt()
+        val text = if (values.size > 1) {
+            "Baixando ${values.size} downloads · $average%"
+        } else {
+            "Baixando $average%"
+        }
+
+        DownloadService.update(context, text, average)
+    }
 
     private fun detectPhase(line: String): String? {
         val trimmed = line.trim()
@@ -243,8 +260,9 @@ object DownloadEngine {
                             }
 
                             if (percent >= 0f) {
-                                val value = percent.toInt()
-                                DownloadService.update(appContext, "Baixando $value%", value)
+                                progressById[id] = percent.toInt()
+                                updateNotificationProgress(appContext)
+
                                 emit(DownloadEvent(id = id, url = url, percent = percent.toDouble()))
                             }
                         },
@@ -322,6 +340,7 @@ object DownloadEngine {
                 )
             } finally {
                 if (workDir.exists()) workDir.deleteRecursively()
+                progressById.remove(id)
                 cancelledJobs.remove(id)
                 processIds.remove(id)
                 jobs.remove(id)
