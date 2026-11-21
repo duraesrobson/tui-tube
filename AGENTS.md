@@ -79,6 +79,9 @@ bin/
 - Histórico de itens encerrados fica em `localStorage` (`tui-tube.history.v1`).
 - Fila no renderer (`useDownloads`): no máximo 2 downloads simultâneos; o resto
   fica em `queued` e é iniciado por um efeito quando abre vaga.
+- Playlist: `usePlaylist` busca páginas de 10 (`getPlaylistInfo` com start/pageSize,
+  `--playlist-start/--playlist-end`); `hasMore` controla o botão "Carregar mais".
+  Nenhum item marcado = playlist inteira (`--playlist-items` vazio).
 - Notificação do Android: progresso com throttle de 800ms, ação "Cancelar"
   (`DownloadActionReceiver`) e notificação de conclusão em canal separado.
 - Cancelar precisa cancelar a corrotina externa (`jobHandles`), senão o

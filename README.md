@@ -20,8 +20,8 @@
 |---|---|
 | 🎵 **MP3** | Extração de áudio de 96 kbps até 320 kbps (ou "Melhor") |
 | 🎬 **MP4** | Qualidades reais do vídeo (até 4K/60fps quando disponível), com merge no aparelho |
-| 📚 **Playlists** | Playlist inteira ou itens escolhidos (`1-5, 8`) com prefixo de índice |
-| 🔎 **Prévia** | Busca título, canal, duração e a lista real de formatos |
+| 📚 **Playlists** | Lista os itens com thumbnail, 10 por vez; marque só os que quiser baixar |
+| 🔎 **Prévia** | Busca thumbnail, título, canal, duração e a lista real de formatos |
 | 📂 **Destino** | Separado por tipo: `Audio/` e `Video/` (desktop: dentro da pasta escolhida; Android: `Download/tui-tube`) |
 | 📤 **Compartilhar** | No Android, aparece no menu "Compartilhar" do YouTube e abre com o link |
 | ⏱️ **Background** | No Android o download continua com a tela apagada, com progresso e cancelar na notificação |
@@ -135,6 +135,7 @@ src/
   lib/downloadErrors.ts    # Tradução dos erros do yt-dlp
   lib/formats.ts           # Normalização das qualidades reais
   lib/youtubeUrl.ts        # Parse/normalização de links
+  hooks/usePlaylist.ts     # Listagem paginada (10 por vez)
   lib/history.ts           # Histórico persistido (localStorage)
   hooks/                   # useVideo, useDownloads
   components/              # Header, UrlInput, OptionsGrid, DownloadsList...
